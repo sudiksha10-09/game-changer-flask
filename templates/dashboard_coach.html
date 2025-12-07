@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-4">
+    <h3 class="mb-3">Coach Dashboard</h3>
+
+    <div class="row g-4">
+        <!-- Profile Form -->
+        <div class="col-lg-7">
+            <div class="bg-white border rounded p-4 shadow-sm">
+                <h5 class="mb-3">Profile Details</h5>
+                <form method="POST">
+                    <div class="mb-2">
+                        <label class="form-label">Full Name*</label>
+                        <input type="text" name="name" class="form-control" value="{{ coach.name if coach else '' }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Sport*</label>
+                        <input type="text" name="sport" class="form-control" value="{{ coach.sport if coach else '' }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">City*</label>
+                        <input type="text" name="city" class="form-control" value="{{ coach.city if coach else '' }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Price per session (₹)*</label>
+                        <input type="number" name="price_per_session" class="form-control" value="{{ coach.price_per_session if coach else '' }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Experience (years)</label>
+                        <input type="number" name="experience_years" class="form-control" value="{{ coach.experience_years if coach else '' }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Tagline</label>
+                        <input type="text" name="tagline" class="form-control" value="{{ coach.tagline if coach else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specialties (comma separated)</label>
+                        <input type="text" name="specialties" class="form-control" value="{{ coach.specialties if coach else '' }}">
+                    </div>
+                    <button class="btn btn-primary w-100">Save Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- AVAILABILITY -->
+        <div class="col-lg-5">
+            <div class="bg-white border rounded p-4 shadow-sm">
+                <h5 class="mb-3">Availability</h5>
+
+                <form action="{{ url_for('save_availability') }}" method="POST">
+                    <label class="form-label mb-2">Available Days</label><br>
+                    {% set selected_days = coach.availability[0].days.split(",") if coach and coach.availability else [] %}
+
+                    {% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+                        <label class="me-2">
+                            <input type="checkbox" name="days" value="{{ d }}" {% if d in selected_days %}checked{% endif %}>
+                            {{ d }}
+                        </label>
+                    {% endfor %}
+
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <label class="form-label">From</label>
+                            <input type="time" name="time_from" class="form-control"
+                                value="{{ coach.availability[0].time_from if coach and coach.availability else '' }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">To</label>
+                            <input type="time" name="time_to" class="form-control"
+                                value="{{ coach.availability[0].time_to if coach and coach.availability else '' }}">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success w-100 mt-3">Save Availability</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

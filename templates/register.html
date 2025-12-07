@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-5" style="max-width: 450px;">
+    <div class="bg-white shadow-sm rounded p-4 border">
+        <h3 class="text-center mb-3">Create Account</h3>
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <label class="form-label">Full Name*</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">City</label>
+                <input type="text" name="city" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email*</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password*</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+
+            <label class="form-label">Register as:</label>
+            <select name="role" class="form-select mb-3">
+                <option value="coach">Coach</option>
+                <option value="academy">Academy / Parent</option>
+            </select>
+
+            <button class="btn btn-primary w-100">Sign Up</button>
+        </form>
+
+        <p class="text-center small mt-3 mb-0">
+            Already have an account?
+            <a href="{{ url_for('login') }}">Login</a>
+        </p>
+    </div>
+</div>
+
+{% endblock %}

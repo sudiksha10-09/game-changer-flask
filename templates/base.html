@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Game Changer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <header class="gc-navbar">
+      <div class="app-container gc-navbar-inner">
+        <a href="{{ url_for('home') }}" class="gc-navbar-left text-decoration-none">
+          <div class="gc-logo-badge"><span>GC</span></div>
+          <span class="gc-logo-text">Game Changer</span>
+        </a>
+        <nav class="gc-navbar-links">
+          <a
+            href="{{ url_for('coaches') }}"
+            class="gc-nav-link {% if request.path.startswith('/coaches') %}gc-nav-link-active{% endif %}"
+            >Find coaches</a
+          >
+          {% if current_user.is_authenticated %}
+          <a href="{{ url_for('coach_dashboard') }}" class="gc-nav-link"
+            >Dashboard</a
+          >
+          <a href="{{ url_for('logout') }}" class="gc-nav-link">Logout</a>
+          {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="gc-nav-link {% if request.path.startswith('/login') %}gc-nav-link-active{% endif %}"
+            >Login</a
+          >
+          <a
+            href="{{ url_for('register') }}"
+            class="gc-nav-link {% if request.path.startswith('/register') %}gc-nav-link-active{% endif %}"
+            >Register</a
+          >
+          {% endif %}
+          <a
+            href="{{ url_for('register') }}?role=coach"
+            class="gc-nav-cta"
+            >List as coach</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <!-- FLASH MESSAGES -->
+    <div class="app-container mt-3">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div>
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} py-2 mb-2" role="alert">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+    </div>
+
+    <!-- MAIN CONTENT -->
+    {% block content %}{% endblock %}
+
+    <footer class="border-top border-light mt-4 py-3 bg-white">
+      <div class="app-container d-flex justify-content-between small text-muted">
+        <span>&copy; {{ 2025 }} Game Changer.</span>
+        <span>Made in Flask.</span>
+      </div>
+    </footer>
+    <!-- Bootstrap JS for modal & components -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  </body>
+</html>

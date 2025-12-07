@@ -1,0 +1,107 @@
+{% extends "base.html" %} {% block content %}
+<section class="app-container hero">
+  <div class="hero-grid">
+    <div>
+      <span class="hero-badge">
+        Early access · Coach marketplace for India
+      </span>
+
+      <h1 class="hero-title">
+        Game Changer – because talent needs the right guidance.
+      </h1>
+
+      <p class="hero-text">
+        Discover verified sports coaches across cricket, football, badminton,
+        strength &amp; conditioning and more. Compare experience, pricing and
+        focus areas before you book a session.
+      </p>
+
+      <div class="hero-actions">
+        <a href="{{ url_for('coaches') }}" class="hero-btn-primary"
+          >Find coaches</a
+        >
+        <a href="{{ url_for('register') }}?role=coach" class="hero-btn-secondary"
+          >List yourself as a coach</a
+        >
+      </div>
+
+      <p class="hero-subtext">
+        No random WhatsApp forwards. Structured profiles, ratings and clear
+        expectations for every coach.
+      </p>
+
+      <div class="hero-features">
+        <div class="hero-feature-card">
+          <p class="hero-feature-eyebrow">For academies</p>
+          <p class="hero-feature-title">Build your coaching bench</p>
+          <p class="hero-feature-text">
+            Shortlist specialised coaches instead of posting generic job ads.
+          </p>
+        </div>
+        <div class="hero-feature-card">
+          <p class="hero-feature-eyebrow">For coaches</p>
+          <p class="hero-feature-title">Showcase your work</p>
+          <p class="hero-feature-text">
+            Highlight experience, focus areas and pricing in one clean profile.
+          </p>
+        </div>
+        <div class="hero-feature-card">
+          <p class="hero-feature-eyebrow">For parents &amp; players</p>
+          <p class="hero-feature-title">Clarity before commitment</p>
+          <p class="hero-feature-text">
+            Understand what each session focuses on before you book.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-panel">
+      <div class="hero-blur-1"></div>
+      <div class="hero-blur-2"></div>
+
+      <div class="hero-panel-card">
+        <p class="hero-panel-title">Top coaches this week</p>
+
+        {% for coach in coaches %}
+        <div class="hero-coach-row">
+          <div class="hero-coach-main">
+            <span class="hero-coach-name">{{ coach.name }}</span>
+            <span class="hero-coach-meta"
+              >{{ coach.sport }} · {{ coach.city }}</span
+            >
+          </div>
+          <div class="hero-coach-right">
+            <div class="hero-coach-price">₹{{ coach.price_per_session }}</div>
+            <div>⭐ {{ "%.1f"|format(coach.rating or 4.5) }}</div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="hero-stats-grid mt-2">
+          <div
+            class="hero-stat-card"
+            style="background:#ecfdf5;color:#047857;"
+          >
+            <p class="hero-stat-label">Cities covered</p>
+            <p class="hero-stat-value">10+</p>
+          </div>
+          <div
+            class="hero-stat-card"
+            style="background:#eff6ff;color:#1d4ed8;"
+          >
+            <p class="hero-stat-label">Sports added</p>
+            <p class="hero-stat-value">6</p>
+          </div>
+          <div
+            class="hero-stat-card"
+            style="background:#fef3c7;color:#b45309;"
+          >
+            <p class="hero-stat-label">Avg rating</p>
+            <p class="hero-stat-value">4.7</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

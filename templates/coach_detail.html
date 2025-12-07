@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="app-container my-4">
+  <a href="{{ url_for('coaches') }}" class="small text-muted text-decoration-none">
+    &larr; Back to coaches
+  </a>
+
+  <div class="row mt-3 g-4">
+    <div class="col-lg-8">
+      <div class="bg-white border rounded-3 p-3 shadow-sm">
+        <h2 class="h4 mb-0">{{ coach.name }}</h2>
+        <p class="text-muted small mb-2">{{ coach.sport }} · {{ coach.city }}</p>
+        {% if coach.tagline %}
+        <p class="small text-muted mb-3">{{ coach.tagline }}</p>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2 mb-3 small">
+          {% for s in specialties %}
+          <span class="badge rounded-pill text-bg-light">{{ s }}</span>
+          {% endfor %}
+        </div>
+
+        <h6 class="small text-uppercase text-muted mb-1">About this coach</h6>
+        <p class="small mb-0">
+          This is a placeholder bio. Later coaches can upload certificates, videos, and
+          showcase achievements. Marketplace is priority for now.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+
+      <!-- PRICE + AVAILABILITY BOX -->
+      <div class="bg-white border rounded-3 p-3 shadow-sm mb-3 small">
+        <p class="text-muted mb-1">Starting from</p>
+        <p class="h5 mb-0 text-success">
+          ₹{{ coach.price_per_session }} <small class="text-muted fs-6">/ session</small>
+        </p>
+        <p class="text-muted mb-2">⭐ {{ "%.1f"|format(coach.rating) }} · {{ coach.experience_years }} yrs experience</p>
+
+        {% if coach.availability %}
+          <p class="fw-bold mb-1">Availability:</p>
+          <p class="mb-1 small">
+            {{ coach.availability[0].days }} <br>
+            {{ coach.availability[0].time_from }} - {{ coach.availability[0].time_to }}
+          </p>
+        {% else %}
+          <p class="small text-danger mb-2">Availability not added yet</p>
+        {% endif %}
+
+        <!-- Working Modal Trigger -->
+        <button class="btn btn-success w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#bookModal">
+          Request Session
+        </button>
+      </div>
+
+      <!-- UPCOMING FEATURES -->
+      <div class="bg-white border rounded-3 p-3 shadow-sm small">
+        <p class="fw-semibold mb-1">Upcoming features</p>
+        <ul class="small text-muted mb-0">
+          <li>Verified certificates</li>
+          <li>Availability calendar & time-slot booking</li>
+          <li>Video intros & drill libraries</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING MODAL -->
+<div class="modal fade" id="bookModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ url_for('book_session', coach_id=coach.id) }}" method="POST">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Request a Session – {{ coach.name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input class="form-control mb-2" name="name" placeholder="Your Name" required>
+          <input class="form-control mb-2" name="email" placeholder="Email" required>
+          <input type="date" class="form-control mb-2" name="preferred_date" required>
+          <input type="time" class="form-control mb-2" name="preferred_time" required>
+          <textarea class="form-control" name="message" placeholder="Message (optional)"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary w-100">Submit Request</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
