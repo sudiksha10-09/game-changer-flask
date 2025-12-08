@@ -1,99 +1,183 @@
 {% extends "base.html" %}
+
 {% block content %}
 
-<section class="app-container my-4">
-  <a href="{{ url_for('coaches') }}" class="small text-muted text-decoration-none">
-    &larr; Back to coaches
-  </a>
-
-  <div class="row mt-3 g-4">
-    <div class="col-lg-8">
-      <div class="bg-white border rounded-3 p-3 shadow-sm">
-        <h2 class="h4 mb-0">{{ coach.name }}</h2>
-        <p class="text-muted small mb-2">{{ coach.sport }} · {{ coach.city }}</p>
-        {% if coach.tagline %}
-        <p class="small text-muted mb-3">{{ coach.tagline }}</p>
-        {% endif %}
-
-        <div class="d-flex flex-wrap gap-2 mb-3 small">
-          {% for s in specialties %}
-          <span class="badge rounded-pill text-bg-light">{{ s }}</span>
-          {% endfor %}
-        </div>
-
-        <h6 class="small text-uppercase text-muted mb-1">About this coach</h6>
-        <p class="small mb-0">
-          This is a placeholder bio. Later coaches can upload certificates, videos, and
-          showcase achievements. Marketplace is priority for now.
-        </p>
-      </div>
-    </div>
+<div class="row g-5 my-3">
 
     <div class="col-lg-4">
+        <div class="position-sticky" style="top: 100px;">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <img src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
+                     class="w-100" 
+                     style="height: 400px; object-fit: cover;">
+                
+                <div class="card-body p-4 text-center">
+                    <h3 class="serif-font mb-1">{{ coach.name }}</h3>
+                    <p class="text-muted small mb-3">{{ coach.city }}, {{ coach.state }}</p>
+                    
+                    {% if coach.is_verified %}
+                        <div class="badge-verified d-inline-block mb-3">
+                            <i class="bi bi-patch-check-fill text-primary"></i> Verified Instructor
+                        </div>
+                    {% endif %}
 
-      <!-- PRICE + AVAILABILITY BOX -->
-      <div class="bg-white border rounded-3 p-3 shadow-sm mb-3 small">
-        <p class="text-muted mb-1">Starting from</p>
-        <p class="h5 mb-0 text-success">
-          ₹{{ coach.price_per_session }} <small class="text-muted fs-6">/ session</small>
+                    <div class="d-grid gap-2">
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.id != coach.user_id %}
+                                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#bookingModal">Book Session</button>
+                            {% else %}
+                                <button class="btn btn-secondary btn-lg" disabled>This is your profile</button>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login to Book</a>
+                        {% endif %}
+                        
+                        <a href="tel:{{ coach.phone }}" class="btn btn-outline-dark">Contact</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row text-center g-2">
+                <div class="col-6">
+                    <div class="card p-3 shadow-sm border-0 bg-light">
+                        <h4 class="mb-0 fw-bold">{{ coach.experience_years }}</h4>
+                        <small class="text-muted">Years Exp.</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card p-3 shadow-sm border-0 bg-light">
+                        <h4 class="mb-0 fw-bold">{{ coach.rating }}</h4>
+                        <small class="text-muted">Rating</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <h1 class="display-4 mb-3 fw-bold">{{ coach.tagline or "Professional Sports Coach" }}</h1>
+        
+        <div class="mb-5">
+            {% for spec in specialties %}
+                <span class="d-inline-block bg-light border border-light rounded-pill px-3 py-1 me-2 mb-2 text-secondary small text-uppercase fw-bold" style="letter-spacing: 1px;">
+                    {{ spec }}
+                </span>
+            {% endfor %}
+        </div>
+
+        <h3 class="mb-4 fw-bold">About the Instructor</h3>
+        <p class="lead text-muted mb-5" style="line-height: 1.8;">
+            With a focus on technique and mental fortitude, {{ coach.name }} brings {{ coach.experience_years }} years of experience to the field. 
+            Training is tailored to individual needs, whether you are a beginner looking to learn the basics or a pro refining your game.
         </p>
-        <p class="text-muted mb-2">⭐ {{ "%.1f"|format(coach.rating) }} · {{ coach.experience_years }} yrs experience</p>
 
-        {% if coach.availability %}
-          <p class="fw-bold mb-1">Availability:</p>
-          <p class="mb-1 small">
-            {{ coach.availability[0].days }} <br>
-            {{ coach.availability[0].time_from }} - {{ coach.availability[0].time_to }}
-          </p>
-        {% else %}
-          <p class="small text-danger mb-2">Availability not added yet</p>
+        <div class="card bg-white border-0 shadow-sm rounded-4 p-5 mb-5">
+            <h3 class="mb-4 fw-bold">Session Pricing</h3>
+            <div class="table-responsive">
+                <table class="table table-borderless align-middle">
+                    <thead class="text-uppercase small text-muted border-bottom">
+                        <tr>
+                            <th class="ps-0 pb-3">Sport Program</th>
+                            <th class="text-end pe-0 pb-3">Rate per Session</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set prices = coach.get_price_dict() %}
+                        {% for sport in coach.get_sports_list() %}
+                        <tr>
+                            <td class="ps-0 py-4">
+                                <span class="h5 fw-bold">{{ sport }}</span>
+                            </td>
+                            <td class="text-end pe-0 py-4">
+                                <span class="h4 text-primary fw-bold">₹{{ prices.get(sport, 'N/A') }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if achievements %}
+        <h3 class="mb-4 fw-bold">Career Highlights</h3>
+        <div class="row g-3">
+            {% for ach in achievements %}
+            <div class="col-md-6">
+                <div class="d-flex align-items-center bg-white p-3 rounded-4 shadow-sm border">
+                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                        <i class="bi bi-trophy-fill"></i>
+                    </div>
+                    <span class="fw-medium text-dark">{{ ach }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
         {% endif %}
-
-        <!-- Working Modal Trigger -->
-        <button class="btn btn-success w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#bookModal">
-          Request Session
-        </button>
-      </div>
-
-      <!-- UPCOMING FEATURES -->
-      <div class="bg-white border rounded-3 p-3 shadow-sm small">
-        <p class="fw-semibold mb-1">Upcoming features</p>
-        <ul class="small text-muted mb-0">
-          <li>Verified certificates</li>
-          <li>Availability calendar & time-slot booking</li>
-          <li>Video intros & drill libraries</li>
-        </ul>
-      </div>
     </div>
-  </div>
-</section>
-
-<!-- BOOKING MODAL -->
-<div class="modal fade" id="bookModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form action="{{ url_for('book_session', coach_id=coach.id) }}" method="POST">
-
-        <div class="modal-header">
-          <h5 class="modal-title">Request a Session – {{ coach.name }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-
-        <div class="modal-body">
-          <input class="form-control mb-2" name="name" placeholder="Your Name" required>
-          <input class="form-control mb-2" name="email" placeholder="Email" required>
-          <input type="date" class="form-control mb-2" name="preferred_date" required>
-          <input type="time" class="form-control mb-2" name="preferred_time" required>
-          <textarea class="form-control" name="message" placeholder="Message (optional)"></textarea>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn-primary w-100">Submit Request</button>
-        </div>
-
-      </form>
-    </div>
-  </div>
 </div>
+
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Book a Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">You are booking a session with <strong>{{ coach.name }}</strong>. Please fill in the details below.</p>
+                
+                <form action="{{ url_for('book_session', coach_id=coach.id) }}" method="POST">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Select Sport</label>
+                        <select name="sport" class="form-select bg-light border-0 rounded-3" required>
+                            {% for sport in coach.get_sports_list() %}
+                                <option value="{{ sport }}">{{ sport }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase">Date</label>
+                            <input type="date" name="date" class="form-control bg-light border-0 rounded-3" required min="{{ get_today_date }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase">Time</label>
+                            <select name="time" class="form-select bg-light border-0 rounded-3" required>
+                                <option value="06:00 AM">06:00 AM</option>
+                                <option value="07:00 AM">07:00 AM</option>
+                                <option value="08:00 AM">08:00 AM</option>
+                                <option value="09:00 AM">09:00 AM</option>
+                                <option value="04:00 PM">04:00 PM</option>
+                                <option value="05:00 PM">05:00 PM</option>
+                                <option value="06:00 PM">06:00 PM</option>
+                                <option value="07:00 PM">07:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">Message (Optional)</label>
+                        <textarea name="message" class="form-control bg-light border-0 rounded-3" rows="2" placeholder="Any specific focus areas?"></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold">Confirm Booking</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var dateInput = document.querySelector('input[type="date"]');
+        if(dateInput) {
+            dateInput.min = new Date().toISOString().split("T")[0];
+        }
+    });
+</script>
 
 {% endblock %}

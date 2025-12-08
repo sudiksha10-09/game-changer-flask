@@ -1,107 +1,147 @@
-{% extends "base.html" %} {% block content %}
-<section class="app-container hero">
-  <div class="hero-grid">
-    <div>
-      <span class="hero-badge">
-        Early access · Coach marketplace for India
-      </span>
+{% extends "base.html" %}
 
-      <h1 class="hero-title">
-        Game Changer – because talent needs the right guidance.
-      </h1>
+{% block content %}
 
-      <p class="hero-text">
-        Discover verified sports coaches across cricket, football, badminton,
-        strength &amp; conditioning and more. Compare experience, pricing and
-        focus areas before you book a session.
-      </p>
+<div class="rounded-5 p-4 p-md-5 mb-5" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+    <div class="row align-items-center">
+        
+        <div class="col-lg-6 position-relative z-2">
+            <div class="d-inline-block bg-white shadow-sm rounded-circle p-4 text-center mb-4" style="width: 130px; height: 130px;">
+                <div class="d-flex flex-col h-100 justify-content-center flex-column">
+                    <span class="fw-bold h3 mb-0">100%</span>
+                    <small class="text-muted" style="font-size: 0.7rem; line-height: 1.1;">Train with<br>the Best</small>
+                </div>
+            </div>
 
-      <div class="hero-actions">
-        <a href="{{ url_for('coaches') }}" class="hero-btn-primary"
-          >Find coaches</a
-        >
-        <a href="{{ url_for('register') }}?role=coach" class="hero-btn-secondary"
-          >List yourself as a coach</a
-        >
-      </div>
-
-      <p class="hero-subtext">
-        No random WhatsApp forwards. Structured profiles, ratings and clear
-        expectations for every coach.
-      </p>
-
-      <div class="hero-features">
-        <div class="hero-feature-card">
-          <p class="hero-feature-eyebrow">For academies</p>
-          <p class="hero-feature-title">Build your coaching bench</p>
-          <p class="hero-feature-text">
-            Shortlist specialised coaches instead of posting generic job ads.
-          </p>
+            <h1 class="display-1 mb-4 fw-bold">
+                Skilled <br> 
+                <span class="fst-italic text-primary">Focus.</span>
+            </h1>
+            <p class="lead mb-5 text-secondary" style="max-width: 450px;">
+                Join thousands who rely on our program. Built with experience, backed by results, and trusted by many.
+            </p>
+            
+            <div class="d-flex gap-3">
+                <a href="{{ url_for('coaches') }}" class="btn btn-dark btn-lg px-4 rounded-pill shadow-lg">Find Your Mentor</a>
+                <a href="#how-it-works" class="btn btn-outline-dark btn-lg px-4 rounded-pill">How It Works</a>
+            </div>
         </div>
-        <div class="hero-feature-card">
-          <p class="hero-feature-eyebrow">For coaches</p>
-          <p class="hero-feature-title">Showcase your work</p>
-          <p class="hero-feature-text">
-            Highlight experience, focus areas and pricing in one clean profile.
-          </p>
+
+        <div class="col-lg-6 position-relative mt-5 mt-lg-0">
+            <div class="position-relative">
+               <img src="{{ url_for('static', filename='images/hero.jpg') }}" class="w-100 h-100 object-fit-cover rounded-5 shadow" alt="Coach" style="min-height: 400px;">
+                
+               <div class="position-absolute bottom-0 start-0 m-4 p-3 bg-white bg-opacity-90 backdrop-blur rounded-4 shadow" style="max-width: 220px;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" class="rounded-circle" width="30">
+                        <span class="small fw-bold">Kristin Watson</span>
+                    </div>
+                    <small class="text-muted d-block fst-italic">"Focus on the follow-through."</small>
+                </div>
+            </div>
         </div>
-        <div class="hero-feature-card">
-          <p class="hero-feature-eyebrow">For parents &amp; players</p>
-          <p class="hero-feature-title">Clarity before commitment</p>
-          <p class="hero-feature-text">
-            Understand what each session focuses on before you book.
-          </p>
-        </div>
-      </div>
     </div>
+</div>
 
-    <div class="hero-panel">
-      <div class="hero-blur-1"></div>
-      <div class="hero-blur-2"></div>
-
-      <div class="hero-panel-card">
-        <p class="hero-panel-title">Top coaches this week</p>
-
-        {% for coach in coaches %}
-        <div class="hero-coach-row">
-          <div class="hero-coach-main">
-            <span class="hero-coach-name">{{ coach.name }}</span>
-            <span class="hero-coach-meta"
-              >{{ coach.sport }} · {{ coach.city }}</span
-            >
-          </div>
-          <div class="hero-coach-right">
-            <div class="hero-coach-price">₹{{ coach.price_per_session }}</div>
-            <div>⭐ {{ "%.1f"|format(coach.rating or 4.5) }}</div>
-          </div>
-        </div>
-        {% endfor %}
-
-        <div class="hero-stats-grid mt-2">
-          <div
-            class="hero-stat-card"
-            style="background:#ecfdf5;color:#047857;"
-          >
-            <p class="hero-stat-label">Cities covered</p>
-            <p class="hero-stat-value">10+</p>
-          </div>
-          <div
-            class="hero-stat-card"
-            style="background:#eff6ff;color:#1d4ed8;"
-          >
-            <p class="hero-stat-label">Sports added</p>
-            <p class="hero-stat-value">6</p>
-          </div>
-          <div
-            class="hero-stat-card"
-            style="background:#fef3c7;color:#b45309;"
-          >
-            <p class="hero-stat-label">Avg rating</p>
-            <p class="hero-stat-value">4.7</p>
-          </div>
-        </div>
-      </div>
+<div id="how-it-works" class="row text-center my-5 py-5">
+    <div class="col-12 mb-5">
+        <h2 class="display-6 fw-bold">How It Works</h2>
+        <p class="text-muted">Start your journey in three simple steps</p>
     </div>
-  </div>
-</section>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 rounded-4 bg-white border h-100 hover-shadow transition-all">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="bi bi-search fs-4"></i>
+            </div>
+            <h4>1. Find a Mentor</h4>
+            <p class="text-muted small">Browse through our list of verified professional coaches tailored to your sport.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 rounded-4 bg-white border h-100 hover-shadow transition-all">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="bi bi-calendar-check fs-4"></i>
+            </div>
+            <h4>2. Book a Session</h4>
+            <p class="text-muted small">Choose a time that works for you and secure your spot instantly.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 rounded-4 bg-white border h-100 hover-shadow transition-all">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <i class="bi bi-trophy fs-4"></i>
+            </div>
+            <h4>3. Level Up</h4>
+            <p class="text-muted small">Connect 1-on-1, get personalized feedback, and improve your game.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row my-5">
+    <div class="col-12">
+        <div class="card bg-dark text-white border-0 rounded-5 overflow-hidden position-relative">
+            <div class="row g-0">
+                <div class="col-lg-6 p-5 d-flex flex-column justify-content-center" style="background-color: #1A1A1A;">
+                    <h2 class="display-5 mb-4 text-white">We Give Our Best In Every Training.</h2>
+                    <p class="opacity-75 mb-4">Improve your game with certified coaches who tailor lessons to your goals.</p>
+                    
+                    <div class="bg-white text-dark p-4 rounded-4 shadow-lg" style="max-width: 300px;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="fw-bold small text-uppercase text-muted">Those Who Trust Us</span>
+                            <i class="bi bi-arrow-up-right-circle-fill text-primary fs-4"></i>
+                        </div>
+                        <h3 class="fw-bold mb-0 display-4">3.2k<span class="text-primary">+</span></h3>
+                        <small class="text-muted">Active Impressions</small>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <img src="{{ url_for('static', filename='images/feature.jpg') }}" class="w-100 h-100 object-fit-cover" alt="Training Session" style="min-height: 400px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="featured" class="d-flex justify-content-between align-items-end mb-4 mt-5">
+    <h2 class="mb-0 fw-bold">Featured Mentors</h2>
+    <a href="{{ url_for('coaches') }}" class="btn btn-outline-dark rounded-pill btn-sm px-3">View All</a>
+</div>
+
+<div class="row g-4 mb-5">
+    {% for coach in coaches %}
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+            <div class="position-relative">
+                <img src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
+                     class="card-img-top rounded-top-4" 
+                     alt="{{ coach.name }}"
+                     style="height: 300px; object-fit: cover;">
+                
+                <span class="position-absolute top-0 end-0 m-3 bg-white px-3 py-1 rounded-pill small fw-bold shadow-sm">
+                    ★ {{ coach.rating }}
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-primary fw-bold small text-uppercase">{{ coach.sport.split(',')[0] }}</span>
+                    {% if coach.is_verified %}
+                    <i class="bi bi-patch-check-fill text-primary" title="Verified"></i>
+                    {% endif %}
+                </div>
+                <h4 class="card-title mb-1 fw-bold">{{ coach.name }}</h4>
+                <p class="text-muted small mb-3 text-truncate">{{ coach.tagline }}</p>
+                <hr class="opacity-10">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">₹{{ coach.price_per_session }} <span class="fw-normal text-muted small">/ session</span></span>
+                    <a href="{{ url_for('coach_detail', slug=coach.slug) }}" class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}

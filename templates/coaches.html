@@ -1,150 +1,63 @@
-{% extends "base.html" %} {% block content %}
-<section class="app-container my-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h2 class="h4 mb-1">Browse coaches</h2>
-      <p class="text-muted small mb-0">
-        Use filters to find the right coach for your program or players.
-      </p>
-    </div>
-  </div>
+{% extends "base.html" %}
 
-  <form
-    method="get"
-    class="p-3 mb-3 bg-white border rounded-3 shadow-sm small"
-  >
-    <div class="row g-2">
-      <div class="col-md-3">
-        <label class="form-label mb-1">Sport</label>
-        <input
-          type="text"
-          name="sport"
-          value="{{ sport }}"
-          class="form-control form-control-sm"
-          placeholder="Cricket, football..."
-        />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label mb-1">City</label>
-        <input
-          type="text"
-          name="city"
-          value="{{ city }}"
-          class="form-control form-control-sm"
-          placeholder="Mumbai, Pune..."
-        />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label mb-1">Min price (₹)</label>
-        <input
-          type="number"
-          name="min_price"
-          value="{{ min_price }}"
-          class="form-control form-control-sm"
-        />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label mb-1">Max price (₹)</label>
-        <input
-          type="number"
-          name="max_price"
-          value="{{ max_price }}"
-          class="form-control form-control-sm"
-        />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label mb-1">Min experience (yrs)</label>
-        <input
-          type="number"
-          name="min_exp"
-          value="{{ min_exp }}"
-          class="form-control form-control-sm"
-        />
-      </div>
-    </div>
-    <div class="row g-2 mt-2 align-items-end">
-      <div class="col-md-2">
-        <label class="form-label mb-1">Min rating</label>
-        <input
-          type="number"
-          step="0.1"
-          name="min_rating"
-          value="{{ min_rating }}"
-          class="form-control form-control-sm"
-        />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label mb-1">Sort by</label>
-        <select name="sort" class="form-select form-select-sm">
-          <option value="relevance" {% if sort=='relevance' %}selected{% endif
-          %}>Relevance</option>
-          <option value="price_asc" {% if sort=='price_asc' %}selected{% endif
-          %}>Price: low → high</option>
-          <option value="price_desc" {% if sort=='price_desc' %}selected{%
-          endif %}>Price: high → low</option>
-          <option value="experience_desc" {% if sort=='experience_desc'
-          %}selected{% endif %}>Experience: high → low</option>
-          <option value="rating_desc" {% if sort=='rating_desc' %}selected{%
-          endif %}>Rating: high → low</option>
-        </select>
-      </div>
-      <div class="col-md-7 text-end">
-        <button type="submit" class="btn btn-sm btn-success me-2">
-          Apply filters
-        </button>
-        <a href="{{ url_for('coaches') }}" class="btn btn-sm btn-outline-secondary"
-          >Reset</a
-        >
-      </div>
-    </div>
-  </form>
+{% block content %}
 
-  {% if coaches %}
-  <div class="row g-3">
+<div class="text-center mb-5 pt-4">
+    <h1 class="display-4 mb-3">Find Your Mentor</h1>
+    <p class="lead text-muted mb-4">Browse our curated list of professional coaches.</p>
+    
+    <div class="d-inline-block bg-white rounded-pill shadow-lg p-2" style="max-width: 600px; width: 100%;">
+        <form action="{{ url_for('coaches') }}" method="GET" class="d-flex align-items-center">
+            <i class="bi bi-search ms-3 text-muted"></i>
+            <input type="text" name="sport" class="form-control border-0 shadow-none bg-transparent" placeholder="Sport (e.g. Tennis)" value="{{ request.args.get('sport', '') }}">
+            <div class="vr mx-2 opacity-25"></div>
+            <input type="text" name="city" class="form-control border-0 shadow-none bg-transparent" placeholder="City" value="{{ request.args.get('city', '') }}">
+            <button class="btn btn-primary rounded-pill px-4" type="submit">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
     {% for coach in coaches %}
-    <div class="col-md-4">
-      <a
-        href="{{ url_for('coach_detail', slug=coach.slug) }}"
-        class="text-decoration-none text-body"
-      >
-        <div class="card p-3 h-100">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <h5 class="mb-0">{{ coach.name }}</h5>
-              <small class="text-muted"
-                >{{ coach.city }} · {{ coach.sport }}</small
-              >
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+            <div class="row g-0 h-100">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
+                         class="w-100 rounded-top-4" 
+                         style="height: 250px; object-fit: cover;">
+                    {% if coach.is_verified %}
+                    <span class="position-absolute bottom-0 start-0 m-3 badge-verified bg-white shadow-sm">
+                        Verified Pro
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-clay fw-bold text-uppercase small">{{ coach.sport.split(',')[0] }}</span>
+                        <span class="text-muted small"><i class="bi bi-geo-alt"></i> {{ coach.city }}</span>
+                    </div>
+                    
+                    <h4 class="mb-1">{{ coach.name }}</h4>
+                    <p class="text-muted small mb-3">{{ coach.tagline or "Dedicated professional coach" }}</p>
+                    
+                    <div class="mt-auto pt-3 border-top border-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="d-block small text-muted">Starting from</span>
+                            <span class="fw-bold fs-5">₹{{ coach.price_per_session }}</span>
+                        </div>
+                        <a href="{{ url_for('coach_detail', slug=coach.slug) }}" class="btn btn-outline-dark btn-sm rounded-pill px-4">Profile</a>
+                    </div>
+                </div>
             </div>
-            <span class="badge bg-success-subtle text-success"
-              >⭐ {{ "%.1f"|format(coach.rating or 4.5) }}</span
-            >
-          </div>
-          {% if coach.tagline %}
-          <p class="small mt-2 mb-2 text-muted">{{ coach.tagline }}</p>
-          {% endif %}
-          <div class="d-flex flex-wrap gap-1 small mb-2">
-            {% for s in (coach.specialties or '').split(',')[:4] %}
-            {% if s.strip() %}
-            <span class="badge rounded-pill text-bg-light">{{ s.strip() }}</span>
-            {% endif %}
-            {% endfor %}
-          </div>
-          <div class="d-flex justify-content-between small text-muted mt-auto">
-            <span
-              ><strong>₹{{ coach.price_per_session }}</strong> / session</span
-            >
-            <span>{{ coach.experience_years }} yrs experience</span>
-          </div>
         </div>
-      </a>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <h3 class="serif-font text-muted">No results found.</h3>
+        <p>Try adjusting your filters.</p>
     </div>
     {% endfor %}
-  </div>
-  {% else %}
-  <p class="text-muted small mt-3">
-    No coaches match these filters yet. Try changing your filters or widening
-    the range.
-  </p>
-  {% endif %}
-</section>
+</div>
 {% endblock %}

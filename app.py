@@ -1,3 +1,8 @@
+import os
+import json
+import random
+import string
+from datetime import datetime
 from flask import (
     Flask,
     render_template,
@@ -5,6 +10,7 @@ from flask import (
     url_for,
     request,
     flash,
+    session,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
@@ -15,86 +21,127 @@ from flask_login import (
     login_required,
     current_user,
 )
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from slugify import slugify
-import os
 
-# ----------------- APP SETUP -----------------
-
+# ---------------------------------
+# APP CONFIG
+# ---------------------------------
 app = Flask(__name__)
-app.config.from_object("config.Config")
+app.config["SECRET_KEY"] = "dev-secret-key-change-this"
 
-# make sure instance folder exists
-os.makedirs(os.path.dirname(app.config["SQLALCHEMY_DATABASE_URI"].replace("sqlite:///", "")), exist_ok=True)
+# ---- EMAIL CONFIGURATION (GMAIL) ----
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'sudiksha746@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'gers mqwk igte lwch'
+app.config['MAIL_DEFAULT_SENDER'] = 'sudiksha746@gmail.com'
+
+mail = Mail(app)
+
+# ---- DB Configuration ----
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DB_PATH = os.path.join(BASE_DIR, "instance", "game_changer.db")
+os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# ---- File Upload Configuration ----
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-# ----------------- MODELS -----------------
+SPORTS_LIST = [
+    "Cricket", "Football", "Badminton", "Kabaddi", "Hockey", "Athletics", 
+    "Swimming", "Tennis", "Table Tennis", "Basketball", "Volleyball", 
+    "Wrestling", "Boxing", "Shooting", "Archery", "Weightlifting", 
+    "Gymnastics", "Judo", "Squash", "Chess"
+]
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# ---------------------------------
+# MODELS
+# ---------------------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(20), default="coach")  # 'coach' or 'academy'
+    role = db.Column(db.String(20), default="coach") # coach or student
     name = db.Column(db.String(120), nullable=False)
-    city = db.Column(db.String(120), nullable=True)
+    city = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-
+    
+    # Relationships
     coach_profile = db.relationship("Coach", backref="user", uselist=False)
+    bookings_made = db.relationship("Booking", backref="student", lazy=True)
 
-    def set_password(self, password: str):
+    def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
-
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
-
 
 class Coach(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-
     slug = db.Column(db.String(150), unique=True, nullable=False)
     name = db.Column(db.String(120), nullable=False)
-    sport = db.Column(db.String(80), nullable=False)
+    sport = db.Column(db.String(500), nullable=False)
+    sports_prices = db.Column(db.Text, default="{}")
+    pincode = db.Column(db.String(10))
+    state = db.Column(db.String(100))
     city = db.Column(db.String(120), nullable=False)
-
     price_per_session = db.Column(db.Integer, nullable=False)
     experience_years = db.Column(db.Integer, default=0)
     rating = db.Column(db.Float, default=4.5)
-    tagline = db.Column(db.String(255), nullable=True)
-    specialties = db.Column(db.Text, nullable=True)  # comma-separated
+    tagline = db.Column(db.String(255))
+    specialties = db.Column(db.Text)
+    age = db.Column(db.Integer)
+    phone = db.Column(db.String(15))
+    profile_image = db.Column(db.String(300), default='default_coach.jpg')
+    achievements = db.Column(db.Text)
+    is_verified = db.Column(db.Boolean, default=False)
+    
+    # Relationships
+    bookings_received = db.relationship("Booking", backref="coach", lazy=True)
 
+    def get_sports_list(self):
+        return self.sport.split(',') if self.sport else []
+    
+    def get_price_dict(self):
+        try:
+            return json.loads(self.sports_prices) if self.sports_prices else {}
+        except:
+            return {}
+
+# --- NEW: BOOKING MODEL ---
+class Booking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('coach.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # The Student
+    sport = db.Column(db.String(100), nullable=False)
+    booking_date = db.Column(db.Date, nullable=False)
+    booking_time = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='Pending') # Pending, Confirmed, Cancelled
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-class Availability(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey("coach.id"), nullable=False)
-    days = db.Column(db.String(120))                # "Mon,Tue,Fri"
-    time_from = db.Column(db.String(20))            # "06:00"
-    time_to = db.Column(db.String(20))              # "10:00"
-    coach = db.relationship("Coach", backref="availability", lazy=True)
-
-
-class BookingRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey("coach.id"), nullable=False)
-    name = db.Column(db.String(120))
-    email = db.Column(db.String(120))
-    preferred_date = db.Column(db.String(25))
-    preferred_time = db.Column(db.String(25))
-    message = db.Column(db.Text)
-    coach = db.relationship("Coach", backref="bookings", lazy=True)
-
-# ----------------- UTILS -----------------
-
-
-def create_coach_slug(name: str, sport: str) -> str:
-    base = slugify(f"{name}-{sport}")
+def create_slug(name, sport_str):
+    first_sport = sport_str.split(',')[0] if sport_str else "coach"
+    base = slugify(f"{name}-{first_sport}")
     slug = base
     counter = 2
     while Coach.query.filter_by(slug=slug).first():
@@ -102,300 +149,281 @@ def create_coach_slug(name: str, sport: str) -> str:
         counter += 1
     return slug
 
-
-def seed_sample_data():
-    """Create tables & some sample coaches if DB empty."""
-    db.create_all()
-
-    if User.query.first():
-        return  # already seeded
-
-    # sample users
-    u1 = User(role="coach", name="Arjun Mehta", city="Mumbai", email="arjun@example.com")
-    u1.set_password("password123")
-    u2 = User(role="coach", name="Riya Kulkarni", city="Pune", email="riya@example.com")
-    u2.set_password("password123")
-    u3 = User(role="coach", name="Akash Singh", city="Bengaluru", email="akash@example.com")
-    u3.set_password("password123")
-
-    db.session.add_all([u1, u2, u3])
-    db.session.flush()  # so they get IDs
-
-    c1 = Coach(
-        user_id=u1.id,
-        slug=create_coach_slug("Arjun Mehta", "Cricket"),
-        name="Arjun Mehta",
-        sport="Cricket",
-        city="Mumbai",
-        price_per_session=1200,
-        experience_years=6,
-        rating=4.7,
-        tagline="Ex-U19 Mumbai player, batting technique & temperament.",
-        specialties="Batting fundamentals, Power-hitting, Shot selection, Match scenarios",
-    )
-
-    c2 = Coach(
-        user_id=u2.id,
-        slug=create_coach_slug("Riya Kulkarni", "Football"),
-        name="Riya Kulkarni",
-        sport="Football",
-        city="Pune",
-        price_per_session=900,
-        experience_years=4,
-        rating=4.6,
-        tagline="AFC-C certified, grassroots & youth development.",
-        specialties="Ball control, Passing drills, Speed & agility, Strength & conditioning",
-    )
-
-    c3 = Coach(
-        user_id=u3.id,
-        slug=create_coach_slug("Akash Singh", "Strength & Conditioning"),
-        name="Akash Singh",
-        sport="Strength & Conditioning",
-        city="Bengaluru",
-        price_per_session=1500,
-        experience_years=8,
-        rating=4.8,
-        tagline="Certified S&C coach working with state-level athletes.",
-        specialties="Strength building, Injury rehab, Endurance, Flexibility",
-    )
-
-    db.session.add_all([c1, c2, c3])
-    db.session.commit()
-    print("Seeded sample data.")
-
-
-# ----------------- ROUTES: PUBLIC PAGES -----------------
-
-
+# ---------------------------------
+# ROUTES
+# ---------------------------------
 @app.route("/")
 def home():
-    featured_coaches = Coach.query.order_by(Coach.rating.desc()).limit(3).all()
-    return render_template("home.html", coaches=featured_coaches)
-
+    top_coaches = Coach.query.order_by(Coach.rating.desc()).limit(3).all()
+    return render_template("home.html", coaches=top_coaches)
 
 @app.route("/coaches")
 def coaches():
-    sport = request.args.get("sport", "", type=str)
-    city = request.args.get("city", "", type=str)
-    min_price = request.args.get("min_price", type=int)
-    max_price = request.args.get("max_price", type=int)
-    min_exp = request.args.get("min_exp", type=int)
-    min_rating = request.args.get("min_rating", type=float)
-
+    sport_filter = request.args.get("sport", "").strip()
+    city_filter = request.args.get("city", "").strip()
     query = Coach.query
-
-    if sport:
-        query = query.filter(Coach.sport.ilike(f"%{sport}%"))
-    if city:
-        query = query.filter(Coach.city.ilike(f"%{city}%"))
-    if min_price is not None:
-        query = query.filter(Coach.price_per_session >= min_price)
-    if max_price is not None:
-        query = query.filter(Coach.price_per_session <= max_price)
-    if min_exp is not None:
-        query = query.filter(Coach.experience_years >= min_exp)
-    if min_rating is not None:
-        query = query.filter(Coach.rating >= min_rating)
-
-    sort = request.args.get("sort", "relevance")
-    if sort == "price_asc":
-        query = query.order_by(Coach.price_per_session.asc())
-    elif sort == "price_desc":
-        query = query.order_by(Coach.price_per_session.desc())
-    elif sort == "experience_desc":
-        query = query.order_by(Coach.experience_years.desc())
-    elif sort == "rating_desc":
-        query = query.order_by(Coach.rating.desc())
-    else:
-        query = query.order_by(Coach.id.desc())
-
-    coaches_list = query.all()
-
-    return render_template(
-        "coaches.html",
-        coaches=coaches_list,
-        sport=sport,
-        city=city,
-        min_price=min_price or "",
-        max_price=max_price or "",
-        min_exp=min_exp or "",
-        min_rating=min_rating or "",
-        sort=sort,
-    )
-
+    if sport_filter:
+        query = query.filter(Coach.sport.ilike(f"%{sport_filter}%"))
+    if city_filter:
+        query = query.filter(Coach.city.ilike(f"%{city_filter}%"))
+    coaches_list = query.order_by(Coach.id.desc()).all()
+    return render_template("coaches.html", coaches=coaches_list)
 
 @app.route("/coaches/<slug>")
 def coach_detail(slug):
     coach = Coach.query.filter_by(slug=slug).first_or_404()
+    achievements = coach.achievements.splitlines() if coach.achievements else []
     specialties = [s.strip() for s in (coach.specialties or "").split(",") if s.strip()]
-    return render_template("coach_detail.html", coach=coach, specialties=specialties)
+    return render_template("coach_detail.html", coach=coach, achievements=achievements, specialties=specialties)
 
-
-# ----------------- AUTH -----------------
-
+# --- NEW: BOOKING ROUTE ---
+@app.route("/book/<int:coach_id>", methods=["POST"])
+@login_required
+def book_session(coach_id):
+    coach = Coach.query.get_or_404(coach_id)
+    
+    # Get form data
+    sport = request.form.get("sport")
+    date_str = request.form.get("date")
+    time_slot = request.form.get("time")
+    message = request.form.get("message")
+    
+    if not date_str or not time_slot:
+        flash("Please select a valid date and time.", "danger")
+        return redirect(url_for('coach_detail', slug=coach.slug))
+        
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Invalid date format.", "danger")
+        return redirect(url_for('coach_detail', slug=coach.slug))
+        
+    # Create Booking
+    new_booking = Booking(
+        coach_id=coach.id,
+        user_id=current_user.id,
+        sport=sport,
+        booking_date=date_obj,
+        booking_time=time_slot,
+        message=message,
+        status="Confirmed" # Auto-confirm for now
+    )
+    
+    db.session.add(new_booking)
+    db.session.commit()
+    
+    flash(f"Session booked successfully with Coach {coach.name}!", "success")
+    
+    # Send Email Notification (Optional, can be uncommented)
+    # msg = Message(f"New Booking: {sport}", recipients=[coach.user.email])
+    # msg.body = f"You have a new session for {sport} on {date_str} at {time_slot} with {current_user.name}."
+    # mail.send(msg)
+    
+    return redirect(url_for('coach_dashboard'))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("home"))
-
+        return redirect(url_for("coach_dashboard"))
+        
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        city = request.form.get("city", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        role = request.form.get("role", "coach")
-
+        role = request.form.get("role", "student") # <--- Default to student
+        
         if not name or not email or not password:
-            flash("Please fill all required fields.", "danger")
+            flash("Fill all fields.", "danger")
         elif User.query.filter_by(email=email).first():
-            flash("Email already registered.", "danger")
+            flash("Email taken.", "danger")
         else:
-            user = User(name=name, city=city, email=email, role=role)
+            # Save User with Role
+            user = User(name=name, email=email, role=role)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
+            
             login_user(user)
-            flash("Account created. Welcome to Game Changer!", "success")
-            if role == "coach":
-                return redirect(url_for("coach_dashboard"))
+            flash(f"Welcome, {name}!", "success")
+            
+            # Redirect based on Role
+            if role == 'coach':
+                return redirect(url_for("coach_dashboard")) # Go to Profile Setup
             else:
-                return redirect(url_for("home"))
-
+                return redirect(url_for("home")) # Go to Home to browse coaches
+                
     return render_template("register.html")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("home"))
-
+        return redirect(url_for("coach_dashboard"))
+        
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         user = User.query.filter_by(email=email).first()
+        
         if user and user.check_password(password):
             login_user(user)
-            flash("Logged in successfully.", "success")
-            next_page = request.args.get("next")
-            return redirect(next_page or url_for("home"))
+            
+            # Redirect based on Role
+            if user.role == 'coach':
+                return redirect(url_for("coach_dashboard"))
+            else:
+                return redirect(url_for("home")) # Students go to home
         else:
-            flash("Invalid email or password.", "danger")
-
+            flash("Invalid credentials.", "danger")
+            
     return render_template("login.html")
-
-
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.", "info")
     return redirect(url_for("home"))
 
+@app.route("/send_otp", methods=["POST"])
+@login_required
+def send_otp():
+    try:
+        otp = ''.join(random.choices(string.digits, k=6))
+        session['verification_otp'] = otp
+        msg = Message("Verify your Game Changer Account", recipients=[current_user.email])
+        msg.body = f"Hello {current_user.name},\n\nYour Verification OTP is: {otp}\n\nDo not share this with anyone."
+        mail.send(msg)
+        return {"status": "success", "message": "OTP sent to " + current_user.email}
+    except Exception as e:
+        print(e)
+        return {"status": "error", "message": "Failed to send email. Check app config."}
 
-# ----------------- COACH DASHBOARD -----------------
-
+@app.route("/verify/coach", methods=["POST"])
+@login_required
+def verify_coach():
+    user_code = request.form.get("code")
+    stored_otp = session.get('verification_otp')
+    if stored_otp and user_code == stored_otp:
+        if current_user.coach_profile:
+            current_user.coach_profile.is_verified = True
+            db.session.commit()
+            session.pop('verification_otp', None)
+            flash("Success! You are now a Verified Coach.", "success")
+        else:
+            flash("Please create a coach profile first.", "warning")
+    else:
+        flash("Invalid OTP. Please try again.", "danger")
+    return redirect(url_for("coach_dashboard"))
 
 @app.route("/dashboard/coach", methods=["GET", "POST"])
 @login_required
 def coach_dashboard():
-    if current_user.role != "coach":
-        flash("Only coaches can access this page.", "danger")
-        return redirect(url_for("home"))
-
     coach = current_user.coach_profile
+    
+    # --- NEW: Fetch Bookings ---
+    # 1. Bookings I have made (as a student)
+    my_bookings = Booking.query.filter_by(user_id=current_user.id).order_by(Booking.booking_date.desc()).all()
+    
+    # 2. Bookings I have received (as a coach)
+    received_bookings = []
+    if coach:
+        received_bookings = Booking.query.filter_by(coach_id=coach.id).order_by(Booking.booking_date.desc()).all()
+        
+    context = {
+        "coach": coach, 
+        "sports_list": SPORTS_LIST,
+        "my_bookings": my_bookings,
+        "received_bookings": received_bookings
+    }
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        sport = request.form.get("sport", "").strip()
-        city = request.form.get("city", "").strip()
-        price = request.form.get("price_per_session", type=int)
-        exp = request.form.get("experience_years", type=int)
         tagline = request.form.get("tagline", "").strip()
+        achievements = request.form.get("achievements", "").strip()
         specialties = request.form.get("specialties", "").strip()
+        pincode = request.form.get("pincode", "").strip()
+        state = request.form.get("state", "").strip()
+        city = request.form.get("city", "").strip()
+        exp_raw = request.form.get("experience_years", "").strip()
+        age_raw = request.form.get("age", "").strip()
+        phone = request.form.get("phone", "").strip()
 
-        if not all([name, sport, city, price]):
-            flash("Please fill all required fields.", "danger")
+        try:
+            exp = int(exp_raw) if exp_raw else 0
+            age = int(age_raw) if age_raw else 0
+        except ValueError:
+            flash("Age/Experience must be numbers.", "danger")
+            return render_template("dashboard_coach.html", **context)
+
+        selected_sports = request.form.getlist("sports") 
+        prices_dict = {}
+        for sport in selected_sports:
+            price_input = request.form.get(f"price_{sport}")
+            if price_input:
+                try:
+                    prices_dict[sport] = int(price_input)
+                except ValueError:
+                    prices_dict[sport] = 0
+        
+        sports_str = ",".join(selected_sports)
+        prices_json = json.dumps(prices_dict)
+        starting_price = min(prices_dict.values()) if prices_dict else 0
+        
+        if not name or not city or not selected_sports:
+            flash("Name, City and at least one Sport are required.", "danger")
+            return render_template("dashboard_coach.html", **context)
+
+        image_filename = coach.profile_image if coach else 'default_coach.jpg'
+        if 'profile_image' in request.files:
+            file = request.files['profile_image']
+            if file and file.filename != '' and allowed_file(file.filename):
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                new_filename = secure_filename(f"coach_{current_user.id}_{int(datetime.now().timestamp())}.{ext}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+                image_filename = new_filename
+
+        if coach is None:
+            slug = create_slug(name, sports_str)
+            coach = Coach(
+                user_id=current_user.id,
+                slug=slug,
+                name=name,
+                sport=sports_str,
+                sports_prices=prices_json,
+                city=city,
+                state=state,
+                pincode=pincode,
+                price_per_session=starting_price,
+                experience_years=exp,
+                age=age,
+                phone=phone,
+                tagline=tagline,
+                specialties=specialties,
+                profile_image=image_filename,
+                achievements=achievements,
+            )
+            db.session.add(coach)
         else:
-            if coach is None:
-                slug = create_coach_slug(name, sport)
-                coach = Coach(
-                    user_id=current_user.id,
-                    slug=slug,
-                    name=name,
-                    sport=sport,
-                    city=city,
-                    price_per_session=price,
-                    experience_years=exp or 0,
-                    tagline=tagline,
-                    specialties=specialties,
-                )
-                db.session.add(coach)
-            else:
-                coach.name = name
-                coach.sport = sport
-                coach.city = city
-                coach.price_per_session = price
-                coach.experience_years = exp or 0
-                coach.tagline = tagline
-                coach.specialties = specialties
+            coach.name = name
+            coach.sport = sports_str
+            coach.sports_prices = prices_json
+            coach.city = city
+            coach.state = state
+            coach.pincode = pincode
+            coach.price_per_session = starting_price
+            coach.experience_years = exp
+            coach.age = age
+            coach.phone = phone
+            coach.tagline = tagline
+            coach.specialties = specialties
+            coach.profile_image = image_filename
+            coach.achievements = achievements
 
-            db.session.commit()
-            flash("Profile saved to Game Changer.", "success")
-            return redirect(url_for("coach_dashboard"))
+        db.session.commit()
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for("coach_dashboard"))
 
-    return render_template("dashboard_coach.html", coach=coach)
-
-# ----------------- AVAILABILITY & BOOKING -----------------
-
-@app.route("/dashboard/coach/availability", methods=["POST"])
-@login_required
-def save_availability():
-    if current_user.role != "coach":
-        flash("Only coaches can update availability.", "danger")
-        return redirect(url_for("home"))
-
-    coach = current_user.coach_profile
-    days = ",".join(request.form.getlist("days"))
-    time_from = request.form.get("time_from")
-    time_to = request.form.get("time_to")
-
-    # create or update
-    if coach.availability:
-        coach.availability[0].days = days
-        coach.availability[0].time_from = time_from
-        coach.availability[0].time_to = time_to
-    else:
-        avail = Availability(coach_id=coach.id, days=days, time_from=time_from, time_to=time_to)
-        db.session.add(avail)
-
-    db.session.commit()
-    flash("Availability saved.", "success")
-    return redirect(url_for("coach_dashboard"))
-
-
-@app.route("/book/<int:coach_id>", methods=["POST"])
-def book_session(coach_id):
-    coach = Coach.query.get_or_404(coach_id)
-
-    booking = BookingRequest(
-        coach_id=coach_id,
-        name=request.form.get("name"),
-        email=request.form.get("email"),
-        preferred_date=request.form.get("preferred_date"),
-        preferred_time=request.form.get("preferred_time"),
-        message=request.form.get("message"),
-    )
-    db.session.add(booking)
-    db.session.commit()
-
-    flash("Request sent! Coach will contact you soon.", "success")
-    return redirect(url_for("coach_detail", slug=coach.slug))
-
-# ----------------- MAIN -----------------
+    return render_template("dashboard_coach.html", **context)
 
 if __name__ == "__main__":
     with app.app_context():
-        seed_sample_data()
+        db.create_all()
     app.run(debug=True)

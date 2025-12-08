@@ -1,84 +1,110 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Game Changer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Bootstrap 5 CDN -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-  </head>
-  <body>
-    <!-- NAVBAR -->
-    <header class="gc-navbar">
-      <div class="app-container gc-navbar-inner">
-        <a href="{{ url_for('home') }}" class="gc-navbar-left text-decoration-none">
-          <div class="gc-logo-badge"><span>GC</span></div>
-          <span class="gc-logo-text">Game Changer</span>
-        </a>
-        <nav class="gc-navbar-links">
-          <a
-            href="{{ url_for('coaches') }}"
-            class="gc-nav-link {% if request.path.startswith('/coaches') %}gc-nav-link-active{% endif %}"
-            >Find coaches</a
-          >
-          {% if current_user.is_authenticated %}
-          <a href="{{ url_for('coach_dashboard') }}" class="gc-nav-link"
-            >Dashboard</a
-          >
-          <a href="{{ url_for('logout') }}" class="gc-nav-link">Logout</a>
-          {% else %}
-          <a
-            href="{{ url_for('login') }}"
-            class="gc-nav-link {% if request.path.startswith('/login') %}gc-nav-link-active{% endif %}"
-            >Login</a
-          >
-          <a
-            href="{{ url_for('register') }}"
-            class="gc-nav-link {% if request.path.startswith('/register') %}gc-nav-link-active{% endif %}"
-            >Register</a
-          >
-          {% endif %}
-          <a
-            href="{{ url_for('register') }}?role=coach"
-            class="gc-nav-cta"
-            >List as coach</a
-          >
-        </nav>
-      </div>
-    </header>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Changer | Premium Coaching</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
 
-    <!-- FLASH MESSAGES -->
-    <div class="app-container mt-3">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div>
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} py-2 mb-2" role="alert">
-          {{ message }}
+    <nav class="navbar navbar-expand-lg sticky-top py-3" style="background-color: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px);">
+        <div class="container">
+            <a class="navbar-brand fs-3 fw-bold serif-font" href="{{ url_for('home') }}" style="letter-spacing: -1px;">
+                GameChanger<span class="text-primary">.</span>
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+    <li class="nav-item"><a class="nav-link fw-medium" href="{{ url_for('coaches') }}">Find a Mentor</a></li>
+    
+    {% if current_user.is_authenticated %}
+        <li class="nav-item dropdown ms-2">
+            <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
+                {{ current_user.name }} 
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-1" style="font-size: 0.6rem; vertical-align: top;">{{ current_user.role|capitalize }}</span>
+            </a>
+            <ul class="dropdown-menu border-0 shadow-lg rounded-4 p-2">
+                {% if current_user.role == 'coach' %}
+                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Coach Dashboard</a></li>
+                {% else %}
+                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">My Bookings</a></li>
+                {% endif %}
+                
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item rounded-3 text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </li>
+    {% else %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Log In</a></li>
+        <li class="nav-item ms-2">
+            <a class="btn btn-dark btn-sm px-4 rounded-pill" href="{{ url_for('register') }}">Join Now</a>
+        </li>
+    {% endif %}
+</ul>
+            </div>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %}
+    </nav>
+
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
     </div>
 
-    <!-- MAIN CONTENT -->
-    {% block content %}{% endblock %}
-
-    <footer class="border-top border-light mt-4 py-3 bg-white">
-      <div class="app-container d-flex justify-content-between small text-muted">
-        <span>&copy; {{ 2025 }} Game Changer.</span>
-        <span>Made in Flask.</span>
-      </div>
+    <footer class="bg-dark py-5 mt-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-5">
+                    <h3 class="serif-font text-white mb-3">GameChanger.</h3>
+                    <p class="text-secondary small" style="max-width: 300px;">Elevate your game with world-class instruction. Trusted by athletes, backed by results.</p>
+                </div>
+                <div class="col-md-2">
+                    <h6 class="text-white mb-3">Company</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">About</a></li>
+                        <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6 class="text-white mb-3">Support</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Help Center</a></li>
+                        <li class="mb-2"><a href="#" class="text-secondary text-decoration-none">Terms</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-white mb-3">Newsletter</h6>
+                    <div class="input-group">
+                        <input type="text" class="form-control border-0 rounded-start-pill" placeholder="Email">
+                        <button class="btn btn-primary rounded-end-pill">Go</button>
+                    </div>
+                </div>
+            </div>
+            <hr class="opacity-25 my-4 border-secondary">
+            <div class="text-center small text-secondary opacity-50">
+                &copy; 2025 Game Changer Inc. All rights reserved.
+            </div>
+        </div>
     </footer>
-    <!-- Bootstrap JS for modal & components -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  </body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
