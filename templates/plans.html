@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="text-center mb-5 pt-4">
+    <h1 class="display-4 serif-font mb-3">Choose Your Edge</h1>
+    <p class="text-muted lead">Whether you are hiring talent or building your coaching career, we have a plan for you.</p>
+
+    <div class="d-inline-flex bg-light rounded-pill p-1 border mt-3">
+        <button class="btn btn-lg rounded-pill px-5 fw-bold {{ 'btn-white shadow-sm' if current_user.role != 'coach' else 'text-muted' }}" 
+                onclick="showPlans('hirer')" id="btn-hirer">
+            For Hirers
+        </button>
+        <button class="btn btn-lg rounded-pill px-5 fw-bold {{ 'btn-white shadow-sm' if current_user.role == 'coach' else 'text-muted' }}" 
+                onclick="showPlans('coach')" id="btn-coach">
+            For Coaches
+        </button>
+    </div>
+</div>
+
+<div id="hirer-plans" class="plan-section" style="display: {{ 'none' if current_user.role == 'coach' else 'flex' }};">
+    <div class="row row-cols-1 row-cols-md-2 mb-3 text-center justify-content-center w-100">
+        
+        <div class="col-lg-4">
+            <div class="card mb-4 rounded-4 shadow-sm border-0 h-100">
+                <div class="card-header py-3 bg-white border-0">
+                    <h4 class="my-0 fw-normal">Student / Individual</h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title">₹0<small class="text-muted fw-light">/mo</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-start mx-auto" style="max-width: 250px;">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Access to all coaches</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Pay per session</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-exclamation-circle me-2"></i>Limit: 3 Bookings / month</li>
+                        <li class="mb-2 text-muted opacity-50"><i class="bi bi-x-circle me-2"></i>Academy Badge</li>
+                    </ul>
+                    <a href="#" class="btn btn-lg btn-outline-dark w-100 rounded-pill">Current Plan</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4 rounded-4 shadow-lg border-primary h-100 position-relative overflow-hidden">
+                <div class="bg-primary text-white text-uppercase small fw-bold py-1 px-4 position-absolute top-0 end-0">
+                    Best for Clubs
+                </div>
+                <div class="card-header py-3 bg-primary text-white border-0">
+                    <h4 class="my-0 fw-bold">Academy Pro</h4>
+                </div>
+                <div class="card-body bg-light bg-opacity-10">
+                    <h1 class="card-title pricing-card-title">₹4,999<small class="text-muted fw-light">/mo</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-start mx-auto" style="max-width: 280px;">
+                        <li class="mb-2 fw-bold"><i class="bi bi-check-circle-fill text-primary me-2"></i>Unlimited Bookings</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>"Verified Academy" Badge</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Bulk Invite Tool</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Dedicated Account Manager</li>
+                    </ul>
+                    <button class="btn btn-lg btn-primary w-100 rounded-pill shadow">Upgrade Academy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="coach-plans" class="plan-section" style="display: {{ 'flex' if current_user.role == 'coach' else 'none' }};">
+    <div class="row row-cols-1 row-cols-md-2 mb-3 text-center justify-content-center w-100">
+        
+        <div class="col-lg-4">
+            <div class="card mb-4 rounded-4 shadow-sm border-0 h-100">
+                <div class="card-header py-3 bg-white border-0">
+                    <h4 class="my-0 fw-normal">Standard Coach</h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title">Free<small class="text-muted fw-light"> listing</small></h1>
+                    <p class="text-muted small">Pay only when you earn.</p>
+                    
+                    <ul class="list-unstyled mt-3 mb-4 text-start mx-auto" style="max-width: 250px;">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Public Profile</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Accept Bookings</li>
+                        <li class="mb-2 text-danger fw-bold"><i class="bi bi-info-circle me-2"></i>15% Platform Commission</li>
+                        <li class="mb-2 text-muted opacity-50"><i class="bi bi-x-circle me-2"></i>Featured on Homepage</li>
+                    </ul>
+                    <button class="btn btn-lg btn-outline-dark w-100 rounded-pill">Get Started</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4 rounded-4 shadow-lg border-success h-100 position-relative overflow-hidden">
+                <div class="bg-success text-white text-uppercase small fw-bold py-1 px-4 position-absolute top-0 end-0">
+                    Keep 100% Earnings
+                </div>
+                <div class="card-header py-3 bg-success text-white border-0">
+                    <h4 class="my-0 fw-bold">Elite Mentor</h4>
+                </div>
+                <div class="card-body bg-light bg-opacity-10">
+                    <h1 class="card-title pricing-card-title">₹999<small class="text-muted fw-light">/mo</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-start mx-auto" style="max-width: 280px;">
+                        <li class="mb-2 fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i>0% Commission (Keep 100%)</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Featured on Homepage</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>"Verified Mentor" Badge</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Analytics & Insights</li>
+                    </ul>
+                    <button class="btn btn-lg btn-success w-100 rounded-pill shadow">Go Elite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container text-center mt-5 mb-5" style="max-width: 800px;">
+    <hr class="opacity-10 my-5">
+    <h3 class="serif-font mb-4">Frequently Asked Questions</h3>
+    <div class="row text-start g-4">
+        <div class="col-md-6">
+            <h6 class="fw-bold">Can I switch plans later?</h6>
+            <p class="text-muted small">Yes, you can upgrade or downgrade your plan at any time from your dashboard settings.</p>
+        </div>
+        <div class="col-md-6">
+            <h6 class="fw-bold">How does the 0% Commission work?</h6>
+            <p class="text-muted small">Elite Mentors pay a monthly fee (₹999) but keep 100% of their session fees. Standard coaches pay no monthly fee but we take a 15% cut per session.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPlans(type) {
+        // Hide all sections
+        document.getElementById('hirer-plans').style.display = 'none';
+        document.getElementById('coach-plans').style.display = 'none';
+        
+        // Reset buttons
+        document.getElementById('btn-hirer').classList.remove('btn-white', 'shadow-sm');
+        document.getElementById('btn-hirer').classList.add('text-muted');
+        
+        document.getElementById('btn-coach').classList.remove('btn-white', 'shadow-sm');
+        document.getElementById('btn-coach').classList.add('text-muted');
+
+        // Show selected
+        if (type === 'hirer') {
+            document.getElementById('hirer-plans').style.display = 'flex';
+            document.getElementById('btn-hirer').classList.add('btn-white', 'shadow-sm');
+            document.getElementById('btn-hirer').classList.remove('text-muted');
+        } else {
+            document.getElementById('coach-plans').style.display = 'flex';
+            document.getElementById('btn-coach').classList.add('btn-white', 'shadow-sm');
+            document.getElementById('btn-coach').classList.remove('text-muted');
+        }
+    }
+</script>
+
+{% endblock %}

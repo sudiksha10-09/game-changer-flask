@@ -11,19 +11,40 @@
             </div>
 
             <form method="POST">
+                
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-muted text-uppercase">I want to...</label>
+                    <label class="form-label fw-bold small text-muted text-uppercase">I am joining as...</label>
                     <div class="row g-2">
                         <div class="col-6">
-                            <input type="radio" class="btn-check" name="role" id="role_student" value="student" checked>
-                            <label class="btn btn-outline-primary w-100 py-2 rounded-3" for="role_student">
-                                <i class="bi bi-person me-1"></i> Hire a Coach
+                            <input type="radio" class="btn-check" name="role" id="role_hirer" value="hirer" checked onchange="toggleOrgOption()">
+                            <label class="btn btn-outline-primary w-100 py-3 rounded-3 text-start ps-3" for="role_hirer">
+                                <div class="fw-bold"><i class="bi bi-search me-2"></i>I want to Hire</div>
+                                <small class="text-muted" style="font-size: 0.7rem;">Find coaches for training.</small>
                             </label>
                         </div>
                         <div class="col-6">
-                            <input type="radio" class="btn-check" name="role" id="role_coach" value="coach">
-                            <label class="btn btn-outline-dark w-100 py-2 rounded-3" for="role_coach">
-                                <i class="bi bi-award me-1"></i> Be a Coach
+                            <input type="radio" class="btn-check" name="role" id="role_coach" value="coach" onchange="toggleOrgOption()">
+                            <label class="btn btn-outline-dark w-100 py-3 rounded-3 text-start ps-3" for="role_coach">
+                                <div class="fw-bold"><i class="bi bi-whistle me-2"></i>I am a Coach</div>
+                                <small class="text-muted" style="font-size: 0.7rem;">Offer training sessions.</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="org_section" class="mb-4 bg-light p-3 rounded-3 border">
+                    <label class="form-label fw-bold small text-muted text-uppercase mb-2">Who are you hiring for?</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="org_type" id="type_ind" value="individual" checked>
+                            <label class="form-check-label" for="type_ind">
+                                Myself / My Child
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="org_type" id="type_org" value="organization">
+                            <label class="form-check-label fw-bold text-primary" for="type_org">
+                                Academy / College (Organization)
                             </label>
                         </div>
                     </div>
@@ -65,4 +86,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleOrgOption() {
+        const isHirer = document.getElementById('role_hirer').checked;
+        const orgSection = document.getElementById('org_section');
+        
+        if (isHirer) {
+            orgSection.style.display = 'block';
+        } else {
+            orgSection.style.display = 'none';
+        }
+    }
+    // Run on load to set initial state
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleOrgOption();
+    });
+</script>
 {% endblock %}

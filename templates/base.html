@@ -24,32 +24,42 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-    <li class="nav-item"><a class="nav-link fw-medium" href="{{ url_for('coaches') }}">Find a Mentor</a></li>
-    
-    {% if current_user.is_authenticated %}
-        <li class="nav-item dropdown ms-2">
-            <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
-                {{ current_user.name }} 
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-1" style="font-size: 0.6rem; vertical-align: top;">{{ current_user.role|capitalize }}</span>
-            </a>
-            <ul class="dropdown-menu border-0 shadow-lg rounded-4 p-2">
-                {% if current_user.role == 'coach' %}
-                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Coach Dashboard</a></li>
-                {% else %}
-                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">My Bookings</a></li>
-                {% endif %}
-                
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item rounded-3 text-danger" href="{{ url_for('logout') }}">Logout</a></li>
-            </ul>
-        </li>
-    {% else %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Log In</a></li>
-        <li class="nav-item ms-2">
-            <a class="btn btn-dark btn-sm px-4 rounded-pill" href="{{ url_for('register') }}">Join Now</a>
-        </li>
-    {% endif %}
-</ul>
+                    <li class="nav-item"><a class="nav-link fw-medium" href="{{ url_for('coaches') }}">Find a Mentor</a></li>
+                    
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown ms-2">
+                            <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
+                                {{ current_user.name }}
+                                {% if current_user.role == 'coach' %}
+                                    <span class="badge bg-dark text-white rounded-pill ms-1" style="font-size: 0.6rem; vertical-align: top;">COACH</span>
+                                {% elif current_user.is_organization %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-1" style="font-size: 0.6rem; vertical-align: top;">RECRUITER</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill ms-1" style="font-size: 0.6rem; vertical-align: top;">STUDENT</span>
+                                {% endif %}
+                            </a>
+                            
+                            <ul class="dropdown-menu border-0 shadow-lg rounded-4 p-2">
+                                {% if current_user.role == 'coach' %}
+                                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Coach Dashboard</a></li>
+                                {% elif current_user.is_organization %}
+                                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Recruiter Dashboard</a></li>
+                                    <li><a class="dropdown-item rounded-3 text-primary" href="{{ url_for('plans') }}">Upgrade Plan</a></li>
+                                {% else %}
+                                    <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">My Bookings</a></li>
+                                {% endif %}
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item rounded-3 text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Log In</a></li>
+                        <li class="nav-item ms-2">
+                            <a class="btn btn-dark btn-sm px-4 rounded-pill" href="{{ url_for('register') }}">Join Now</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>

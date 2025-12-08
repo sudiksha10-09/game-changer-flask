@@ -75,7 +75,8 @@ def allowed_file(filename):
 # ---------------------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(20), default="coach") # coach or student
+    role = db.Column(db.String(20), default="hirer") # 'coach' or 'hirer'
+    is_organization = db.Column(db.Boolean, default=False) # <--- NEW STRATEGY FIELD
     name = db.Column(db.String(120), nullable=False)
     city = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -123,16 +124,15 @@ class Coach(db.Model):
         except:
             return {}
 
-# --- NEW: BOOKING MODEL ---
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey('coach.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # The Student
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # The Hirer
     sport = db.Column(db.String(100), nullable=False)
     booking_date = db.Column(db.Date, nullable=False)
     booking_time = db.Column(db.String(20), nullable=False)
     message = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default='Pending') # Pending, Confirmed, Cancelled
+    status = db.Column(db.String(20), default='Pending') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
@@ -157,6 +157,10 @@ def home():
     top_coaches = Coach.query.order_by(Coach.rating.desc()).limit(3).all()
     return render_template("home.html", coaches=top_coaches)
 
+@app.route("/plans")
+def plans():
+    return render_template("plans.html")
+
 @app.route("/coaches")
 def coaches():
     sport_filter = request.args.get("sport", "").strip()
@@ -176,13 +180,16 @@ def coach_detail(slug):
     specialties = [s.strip() for s in (coach.specialties or "").split(",") if s.strip()]
     return render_template("coach_detail.html", coach=coach, achievements=achievements, specialties=specialties)
 
-# --- NEW: BOOKING ROUTE ---
 @app.route("/book/<int:coach_id>", methods=["POST"])
 @login_required
 def book_session(coach_id):
     coach = Coach.query.get_or_404(coach_id)
     
-    # Get form data
+    # Basic Plan Limitation Logic (Example)
+    # If !current_user.is_organization and len(my_bookings) > 3:
+    #    flash("Free limit reached. Upgrade to Recruiter Pro.", "warning")
+    #    return redirect(url_for('plans'))
+
     sport = request.form.get("sport")
     date_str = request.form.get("date")
     time_slot = request.form.get("time")
@@ -198,7 +205,6 @@ def book_session(coach_id):
         flash("Invalid date format.", "danger")
         return redirect(url_for('coach_detail', slug=coach.slug))
         
-    # Create Booking
     new_booking = Booking(
         coach_id=coach.id,
         user_id=current_user.id,
@@ -206,19 +212,13 @@ def book_session(coach_id):
         booking_date=date_obj,
         booking_time=time_slot,
         message=message,
-        status="Confirmed" # Auto-confirm for now
+        status="Confirmed" 
     )
     
     db.session.add(new_booking)
     db.session.commit()
     
     flash(f"Session booked successfully with Coach {coach.name}!", "success")
-    
-    # Send Email Notification (Optional, can be uncommented)
-    # msg = Message(f"New Booking: {sport}", recipients=[coach.user.email])
-    # msg.body = f"You have a new session for {sport} on {date_str} at {time_slot} with {current_user.name}."
-    # mail.send(msg)
-    
     return redirect(url_for('coach_dashboard'))
 
 @app.route("/register", methods=["GET", "POST"])
@@ -230,15 +230,20 @@ def register():
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        role = request.form.get("role", "student") # <--- Default to student
+        role = request.form.get("role", "hirer") # Default to 'hirer' (Student/Recruiter)
+        org_type = request.form.get("org_type", "individual") # 'individual' or 'organization'
         
+        # Logic: If they are a hirer and selected 'organization', set flag True
+        is_org = False
+        if role == 'hirer' and org_type == 'organization':
+            is_org = True
+
         if not name or not email or not password:
             flash("Fill all fields.", "danger")
         elif User.query.filter_by(email=email).first():
             flash("Email taken.", "danger")
         else:
-            # Save User with Role
-            user = User(name=name, email=email, role=role)
+            user = User(name=name, email=email, role=role, is_organization=is_org)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
@@ -246,11 +251,13 @@ def register():
             login_user(user)
             flash(f"Welcome, {name}!", "success")
             
-            # Redirect based on Role
             if role == 'coach':
-                return redirect(url_for("coach_dashboard")) # Go to Profile Setup
+                return redirect(url_for("coach_dashboard"))
             else:
-                return redirect(url_for("home")) # Go to Home to browse coaches
+                # Redirect Hirers to Plans page first to upsell, or Dashboard
+                if is_org:
+                    return redirect(url_for("plans")) # Send organizations to pricing immediately
+                return redirect(url_for("home")) 
                 
     return render_template("register.html")
 
@@ -258,24 +265,20 @@ def register():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("coach_dashboard"))
-        
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         user = User.query.filter_by(email=email).first()
-        
         if user and user.check_password(password):
             login_user(user)
-            
-            # Redirect based on Role
             if user.role == 'coach':
                 return redirect(url_for("coach_dashboard"))
             else:
-                return redirect(url_for("home")) # Students go to home
+                return redirect(url_for("home"))
         else:
             flash("Invalid credentials.", "danger")
-            
     return render_template("login.html")
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -313,16 +316,14 @@ def verify_coach():
         flash("Invalid OTP. Please try again.", "danger")
     return redirect(url_for("coach_dashboard"))
 
-@app.route("/dashboard/coach", methods=["GET", "POST"])
+@app.route("/dashboard", methods=["GET", "POST"]) # Universal Dashboard Link
 @login_required
 def coach_dashboard():
+    # If user is a coach, show coach profile management
     coach = current_user.coach_profile
     
-    # --- NEW: Fetch Bookings ---
-    # 1. Bookings I have made (as a student)
     my_bookings = Booking.query.filter_by(user_id=current_user.id).order_by(Booking.booking_date.desc()).all()
     
-    # 2. Bookings I have received (as a coach)
     received_bookings = []
     if coach:
         received_bookings = Booking.query.filter_by(coach_id=coach.id).order_by(Booking.booking_date.desc()).all()
@@ -335,6 +336,10 @@ def coach_dashboard():
     }
 
     if request.method == "POST":
+        if current_user.role != 'coach':
+             flash("Only coaches can update profile settings.", "danger")
+             return redirect(url_for('coach_dashboard'))
+
         name = request.form.get("name", "").strip()
         tagline = request.form.get("tagline", "").strip()
         achievements = request.form.get("achievements", "").strip()
