@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.pricing-card {
+    border-radius: 18px;
+    padding: 30px;
+    transition: 0.3s ease;
+}
+.pricing-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.12);
+}
+.price-tag {
+    font-size: 38px;
+    font-weight: 700;
+}
+.plan-name {
+    font-size: 24px;
+    font-weight: 600;
+}
+.feature-list li {
+    margin-bottom: 8px;
+}
+</style>
+
+<div class="container py-5">
+    <h2 class="text-center mb-4 fw-bold">Choose Your GameChanger Plan</h2>
+    <p class="text-center text-muted mb-5">Unlock advanced tools and premium visibility</p>
+
+    <div class="row justify-content-center g-4">
+
+        <!-- COACH PRO -->
+        <div class="col-md-5">
+            <div class="pricing-card bg-white shadow-sm">
+                <h3 class="plan-name text-primary">Coach Pro</h3>
+                <p class="text-muted">Boost your visibility and get more bookings</p>
+                
+                <p class="price-tag">₹1,999 <span class="fs-6 text-muted">/ one-time</span></p>
+
+                <ul class="feature-list">
+                    <li>✔ Verified Badge on Profile</li>
+                    <li>✔ Priority in Search Results</li>
+                    <li>✔ Unlimited Session Bookings</li>
+                    <li>✔ Direct WhatsApp Contact Button</li>
+                    <li>✔ Coach Dashboard Insights</li>
+                </ul>
+
+                <form action="{{ url_for('create_checkout_session', plan='coach_premium') }}" method="POST">
+                    <button class="btn btn-primary btn-lg w-100 mt-3">Upgrade to Coach Pro</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ACADEMY PRO -->
+        <div class="col-md-5">
+            <div class="pricing-card bg-white shadow-sm">
+                <h3 class="plan-name text-success">Academy Pro</h3>
+                <p class="text-muted">Designed for academies hiring multiple coaches</p>
+
+                <p class="price-tag">₹4,999 <span class="fs-6 text-muted">/ one-time</span></p>
+
+                <ul class="feature-list">
+                    <li>✔ Hire Multiple Coaches</li>
+                    <li>✔ Academy Verification Badge</li>
+                    <li>✔ Priority Support</li>
+                    <li>✔ Bulk Booking Management</li>
+                    <li>✔ Advanced Team Dashboard</li>
+                </ul>
+
+                <form action="{{ url_for('create_checkout_session', plan='academy_pro') }}" method="POST">
+                    <button class="btn btn-success btn-lg w-100 mt-3">Get Academy Pro</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

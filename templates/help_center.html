@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <div class="row">
+    <div class="col-md-9 mx-auto">
+      <h1 class="mb-3">Help Center</h1>
+      <p class="lead text-muted">Questions about bookings, payments or profiles? Start here.</p>
+
+      <h5 class="mt-4">Quick answers</h5>
+      <div class="mb-3">
+        <strong>How do I book a coach?</strong>
+        <p class="mb-0 text-muted">Search coaches, view profile, select a date/time and submit a booking request. The coach will confirm or reject it from their dashboard.</p>
+      </div>
+
+      <div class="mb-3">
+        <strong>How do payments work?</strong>
+        <p class="mb-0 text-muted">Payments are processed by Stripe Checkout. You’ll receive email confirmations and receipts after successful payments.</p>
+      </div>
+
+      <div class="mb-3">
+        <strong>I need to cancel or reschedule a booking</strong>
+        <p class="mb-0 text-muted">Contact the coach via the booking message or use your dashboard to request a change.</p>
+      </div>
+
+      <h5 class="mt-4">Still need help?</h5>
+      <p>Email our support: <a href="mailto:support@gamechanger.example">support@gamechanger.example</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

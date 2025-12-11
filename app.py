@@ -28,6 +28,23 @@ from slugify import slugify
 from dotenv import load_dotenv
 
 load_dotenv()
+# ---------- STRIPE CONFIG & LOGGING ----------
+import logging
+import stripe
+
+# Basic logging to stdout for Render / local visibility
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+# Stripe environment vars (set these in .env locally, and in Render secrets in production)
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")  # set locally to: STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")  # pk_test_...
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")  # set from Stripe dashboard (test webhook secret)
+
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
+else:
+    logger.warning("STRIPE_SECRET_KEY not set — Stripe disabled.")
 
 # ---------------------------------
 # PATHS
@@ -110,6 +127,13 @@ def allowed_file(filename):
 # ---------------------------------
 # MODELS
 # ---------------------------------
+class StripeEvent(db.Model):
+    """
+    Stores processed Stripe event IDs to make webhook handling idempotent.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String(255), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     coach_id = db.Column(db.Integer, db.ForeignKey("coach.id"), nullable=False)
@@ -126,7 +150,6 @@ class Subscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
 
-
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(20), default="hirer")  # 'coach' or 'hirer'
@@ -135,6 +158,10 @@ class User(UserMixin, db.Model):
     city = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+
+    # Stripe fields
+    stripe_customer_id = db.Column(db.String(255), nullable=True)   # stores the Stripe Customer ID
+    stripe_session_id = db.Column(db.String(255), nullable=True)    # last successful checkout session id
 
     # Relationships
     coach_profile = db.relationship("Coach", backref="user", uselist=False)
@@ -145,7 +172,6 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
-
 
 class Coach(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -246,6 +272,12 @@ def create_slug(name, sport_str):
 # ---------------------------------
 # ROUTES
 # ---------------------------------
+# ---------- PLANS ROUTE ----------
+@app.route("/plans")
+def plans():
+    return render_template("pricing.html")
+
+
 @app.route("/review/<int:coach_id>", methods=["POST"])
 @login_required
 def add_review(coach_id):
@@ -428,10 +460,22 @@ def home():
     top_coaches = Coach.query.order_by(Coach.rating.desc()).limit(3).all()
     return render_template("home.html", coaches=top_coaches)
 
+# ---------- STATIC INFO PAGES ----------
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
-@app.route("/plans")
-def plans():
-    return render_template("plans.html")
+@app.route("/careers")
+def careers():
+    return render_template("careers.html")
+
+@app.route("/help")
+def help_center():
+    return render_template("help_center.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
 
 @app.route("/coaches")
 def coaches():
@@ -900,6 +944,140 @@ def coach_dashboard():
 
     return render_template("dashboard_coach.html", **context)
 
+# ---------- STRIPE CHECKOUT & WEBHOOK ROUTES ----------
+
+# Create a Checkout Session for a simple one-time purchase (demo)
+# Create a Checkout Session using STRIPE PRICE IDS from .env
+@app.route("/create-checkout-session/<plan>", methods=["POST", "GET"])
+@login_required
+def create_checkout_session(plan):
+
+    if not STRIPE_SECRET_KEY:
+        flash("Stripe is not configured.", "danger")
+        return redirect(url_for("plans"))
+
+    # Load Stripe Price IDs from environment
+    PRICE_COACH = os.getenv("STRIPE_PRICE_COACH_PRO")
+    PRICE_ACADEMY = os.getenv("STRIPE_PRICE_ACADEMY_PRO")
+
+    price_map = {
+        "coach_premium": PRICE_COACH,
+        "academy_pro": PRICE_ACADEMY,
+    }
+
+    if plan not in price_map or price_map[plan] is None:
+        flash("Invalid plan configuration.", "danger")
+        return redirect(url_for("plans"))
+
+    selected_price_id = price_map[plan]
+
+    try:
+        # Create or reuse Stripe Customer for current user
+        if current_user.stripe_customer_id:
+            customer_id = current_user.stripe_customer_id
+        else:
+            customer = stripe.Customer.create(email=current_user.email, name=current_user.name)
+            customer_id = customer["id"]
+            current_user.stripe_customer_id = customer_id
+            db.session.commit()
+
+        # Create Checkout Session
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            customer=customer_id,
+            line_items=[
+                {
+                    "price": selected_price_id,
+                    "quantity": 1,
+                }
+            ],
+            success_url=url_for("plans", _external=True) + "?payment=success&session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=url_for("plans", _external=True) + "?payment=cancel",
+            client_reference_id=str(current_user.id),
+        )
+
+        logger.info(f"Created Stripe Checkout Session {checkout_session['id']} for user {current_user.id}")
+        return redirect(checkout_session.url, code=303)
+
+    except Exception as e:
+        logger.exception("Failed to create Stripe Checkout")
+        flash("Payment process failed.", "danger")
+        return redirect(url_for("plans"))
+
+@app.route("/stripe_webhook", methods=["POST"])
+def stripe_webhook():
+    """
+    Webhook endpoint for Stripe events. Verifies signature and performs idempotent handling.
+    Expects STRIPE_WEBHOOK_SECRET in env.
+    """
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get("Stripe-Signature", None)
+
+    if not STRIPE_WEBHOOK_SECRET:
+        logger.error("STRIPE_WEBHOOK_SECRET not configured; rejecting webhook.")
+        return ("Webhook not configured", 400)
+
+    try:
+        event = stripe.Webhook.construct_event(payload=payload, sig_header=sig_header, secret=STRIPE_WEBHOOK_SECRET)
+    except ValueError:
+        # Invalid payload
+        logger.warning("Invalid payload received on /stripe_webhook")
+        return ("Invalid payload", 400)
+    except stripe.error.SignatureVerificationError:
+        logger.warning("Invalid signature on /stripe_webhook")
+        return ("Invalid signature", 400)
+    except Exception as e:
+        logger.exception("Unexpected error while verifying webhook")
+        return ("Webhook verification error", 400)
+
+    # Idempotency: skip event if already processed
+    event_id = event.get("id")
+    if StripeEvent.query.filter_by(event_id=event_id).first():
+        logger.info(f"Webhook event {event_id} already processed — skipping.")
+        return ("Already processed", 200)
+
+    # Save event id early (prevents duplicate processing in concurrent requests)
+    try:
+        db.session.add(StripeEvent(event_id=event_id))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("Could not store StripeEvent; aborting to avoid duplicate work.")
+        return ("DB error", 500)
+
+    # Process relevant events
+    try:
+        if event["type"] == "checkout.session.completed":
+            session_obj = event["data"]["object"]
+            session_id = session_obj.get("id")
+            client_ref = session_obj.get("client_reference_id")  # our user id string
+            customer_id = session_obj.get("customer")
+
+            logger.info(f"Processing checkout.session.completed: session={session_id} client_ref={client_ref}")
+
+            user = None
+            if client_ref:
+                try:
+                    user = User.query.get(int(client_ref))
+                except Exception:
+                    user = None
+
+            # Update user subscription fields idempotently
+            if user:
+                user.stripe_customer_id = customer_id or user.stripe_customer_id
+                user.stripe_session_id = session_id or user.stripe_session_id
+                # Example: mark as subscribed — change as per your business logic
+                # user.is_subscribed = True   # you don't have such field by default
+                db.session.commit()
+                logger.info(f"Updated user {user.id} with stripe_session {session_id}")
+
+        # Add other Stripe event types you care about here
+    except Exception:
+        db.session.rollback()
+        logger.exception("Error processing stripe event")
+        return ("Processing error", 500)
+
+    return ("", 200)
 
 if __name__ == "__main__":
     with app.app_context():
