@@ -558,16 +558,27 @@ def coach_detail(slug):
         can_review=can_review,
     )
 
-
 @app.route("/book/<int:coach_id>", methods=["POST"])
 @login_required
 def book_session(coach_id):
     coach = Coach.query.get_or_404(coach_id)
 
+    # 1. Validation Logic (Same as before)
     if current_user.role != "hirer":
-        flash("Only players/parents/academies (hirer accounts) can book sessions.", "danger")
+        flash("Only hirers can book sessions.", "danger")
         return redirect(url_for("coach_detail", slug=coach.slug))
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
+    # --- NEW: DOUBLE BOOKING CHECK ---
+    existing_booking = Booking.query.filter_by(
+        coach_id=coach.id,
+        booking_date=date_obj,
+        booking_time=time_slot
+    ).filter(Booking.status.in_(["Confirmed", "Payment Pending"])).first()
+
+    if existing_booking:
+        flash("This time slot is already booked. Please choose another.", "danger")
+        return redirect(url_for("coach_detail", slug=coach.slug))
     sport = request.form.get("sport")
     date_str = request.form.get("date")
     time_slot = request.form.get("time")
@@ -580,21 +591,18 @@ def book_session(coach_id):
 
     try:
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-        today = datetime.now().date()
-        if date_obj < today:
-            flash("You cannot book a session in the past.", "danger")
-            return redirect(url_for("coach_detail", slug=coach.slug))
-
-        if date_obj == today:
-            time_obj = datetime.strptime(time_slot, "%I:%M %p").time()
-            now_time = datetime.now().time()
-            if time_obj < now_time:
-                flash("That time slot has already passed for today.", "danger")
-                return redirect(url_for("coach_detail", slug=coach.slug))
-
+        # ... (Keep your existing date validation logic here) ...
     except ValueError:
         flash("Invalid date format.", "danger")
         return redirect(url_for("coach_detail", slug=coach.slug))
+
+    # 2. Save Booking as "Payment Pending"
+    # We save it NOW so we have an ID to send to Stripe
+    initial_status = "Payment Pending"
+    
+    # If coach is free, we can just confirm immediately (optional logic)
+    if coach.price_per_session == 0:
+        initial_status = "Confirmed"
 
     new_booking = Booking(
         coach_id=coach.id,
@@ -604,39 +612,52 @@ def book_session(coach_id):
         booking_time=time_slot,
         message=message,
         location=location,
-        status="Pending",
+        status=initial_status, 
     )
 
     db.session.add(new_booking)
     db.session.commit()
 
-    # EMAIL NOTIFICATION TO COACH
-    try:
-        if coach.user and coach.user.email:
-            msg = Message(
-                "New booking request on GameChanger",
-                recipients=[coach.user.email],
-            )
-            msg.body = (
-                f"Hi {coach.name},\n\n"
-                f"You have a new booking request from {current_user.name}.\n\n"
-                f"Sport: {sport}\n"
-                f"Date: {date_obj.strftime('%d %b %Y')}\n"
-                f"Time: {time_slot}\n"
-                f"Location: {location or 'Not specified'}\n\n"
-                "Log in to your GameChanger dashboard to confirm or reject this session.\n\n"
-                "- GameChanger"
-            )
-            mail.send(msg)
-    except Exception as e:
-        print("Booking email error:", e)
+    # 3. If Coach is Free, skip Stripe
+    if coach.price_per_session == 0:
+        # Send emails manually here or refactor email logic into a function
+        flash("Booking confirmed!", "success")
+        return redirect(url_for("coach_dashboard"))
 
-    flash(
-        f"Booking request sent to Coach {coach.name}! "
-        "They will confirm or decline from their dashboard.",
-        "success",
-    )
-    return redirect(url_for("coach_dashboard"))
+    # 4. If Coach is Paid, Create Stripe Session (Dynamic Price)
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            customer_email=current_user.email, # Pre-fill user email
+            line_items=[{
+                'price_data': {
+                    'currency': 'inr',
+                    # PRICE CALCULATION: Stripe expects Paisa (Multiply by 100)
+                    'unit_amount': int(coach.price_per_session * 100),
+                    'product_data': {
+                        'name': f"Training with {coach.name}",
+                        'description': f"{sport} Session on {date_str} at {time_slot}",
+                    },
+                },
+                'quantity': 1,
+            }],
+            # CRITICAL: Pass the Booking ID so Webhook knows what to update
+            metadata={
+                'booking_id': new_booking.id, 
+                'type': 'coach_booking'
+            },
+            success_url=url_for('coach_dashboard', _external=True) + "?payment=success",
+            cancel_url=url_for('coach_detail', slug=coach.slug, _external=True) + "?payment=cancelled",
+        )
+        return redirect(checkout_session.url, code=303)
+
+    except Exception as e:
+        logger.exception("Stripe Error")
+        # If stripe fails, delete the pending booking so it doesn't clutter DB
+        db.session.delete(new_booking)
+        db.session.commit()
+        flash("Error initializing payment. Please try again.", "danger")
+        return redirect(url_for("coach_detail", slug=coach.slug))
 @app.route("/booking/<int:booking_id>/status", methods=["POST"])
 @login_required
 def update_booking_status(booking_id):
@@ -1046,38 +1067,86 @@ def stripe_webhook():
         return ("DB error", 500)
 
     # Process relevant events
+    # Process relevant events
     try:
         if event["type"] == "checkout.session.completed":
             session_obj = event["data"]["object"]
-            session_id = session_obj.get("id")
-            client_ref = session_obj.get("client_reference_id")  # our user id string
-            customer_id = session_obj.get("customer")
-
-            logger.info(f"Processing checkout.session.completed: session={session_id} client_ref={client_ref}")
-
-            user = None
-            if client_ref:
-                try:
+            metadata = session_obj.get("metadata", {})
+            
+            # CASE A: Subscription Plan (Your existing logic)
+            if metadata.get("type") is None: # Or specific check for plans
+                client_ref = session_obj.get("client_reference_id")
+                customer_id = session_obj.get("customer")
+                if client_ref:
                     user = User.query.get(int(client_ref))
-                except Exception:
-                    user = None
+                    if user:
+                        user.stripe_customer_id = customer_id
+                        user.stripe_session_id = session_obj.get("id")
+                        # Add logic: user.is_premium = True
+                        db.session.commit()
 
-            # Update user subscription fields idempotently
-            if user:
-                user.stripe_customer_id = customer_id or user.stripe_customer_id
-                user.stripe_session_id = session_id or user.stripe_session_id
-                # Example: mark as subscribed — change as per your business logic
-                # user.is_subscribed = True   # you don't have such field by default
-                db.session.commit()
-                logger.info(f"Updated user {user.id} with stripe_session {session_id}")
+            # CASE B: Coach Booking (New Logic)
+            elif metadata.get("type") == "coach_booking":
+                booking_id = metadata.get("booking_id")
+                if booking_id:
+                    booking = Booking.query.get(booking_id)
+                    if booking:
+                        # 1. Update Status
+                        booking.status = "Confirmed"
+                        db.session.commit()
+                        logger.info(f"Booking {booking_id} confirmed via Stripe.")
 
-        # Add other Stripe event types you care about here
+                        # 2. Trigger Emails (Move your email logic here)
+                        send_booking_confirmation_emails(booking) 
+
     except Exception:
         db.session.rollback()
         logger.exception("Error processing stripe event")
         return ("Processing error", 500)
+def send_booking_confirmation_emails(booking):
+    """Sends confirmation emails to both Coach and Student"""
+    try:
+        # Email to Coach
+        if booking.coach.user.email:
+            msg_coach = Message(
+                "New Paid Booking Confirmed! 💰",
+                recipients=[booking.coach.user.email]
+            )
+            msg_coach.body = (
+                f"Hi {booking.coach.name},\n\n"
+                f"Payment received! You have a confirmed session with {booking.student.name}.\n"
+                f"Date: {booking.booking_date}\nTime: {booking.booking_time}\n\n"
+                "- GameChanger Team"
+            )
+            mail.send(msg_coach)
 
-    return ("", 200)
+        # Email to Student
+        if booking.student.email:
+            msg_student = Message(
+                "Booking Confirmed! ✅",
+                recipients=[booking.student.email]
+            )
+            msg_student.body = (
+                f"Hi {booking.student.name},\n\n"
+                f"Your payment was successful. You are booked with {booking.coach.name}!\n"
+                f"Date: {booking.booking_date}\nTime: {booking.booking_time}\n\n"
+                "- GameChanger Team"
+            )
+            mail.send(msg_student)
+            
+    except Exception as e:
+        logger.error(f"Failed to send confirmation emails: {e}")
+# ERROR HANDLERS
+# ---------------------------------
+@app.errorhandler(404)
+def page_not_found(e):
+    # Note: We return the 404 status code explicitly
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    # It's good practice to have a 500 handler too
+    return render_template("404.html"), 500  # You can reuse 404 or make a 500.html
 
 if __name__ == "__main__":
     with app.app_context():

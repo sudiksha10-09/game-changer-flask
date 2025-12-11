@@ -22,15 +22,28 @@
 .feature-list li {
     margin-bottom: 8px;
 }
+/* FAQ Styles */
+.accordion-button:not(.collapsed) {
+    color: #0d6efd;
+    background-color: #e7f1ff;
+}
 </style>
 
 <div class="container py-5">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <h2 class="text-center mb-4 fw-bold">Choose Your GameChanger Plan</h2>
     <p class="text-center text-muted mb-5">Unlock advanced tools and premium visibility</p>
 
-    <div class="row justify-content-center g-4">
+    <div class="row justify-content-center g-4 mb-5">
 
-        <!-- COACH PRO -->
         <div class="col-md-5">
             <div class="pricing-card bg-white shadow-sm">
                 <h3 class="plan-name text-primary">Coach Pro</h3>
@@ -38,12 +51,11 @@
                 
                 <p class="price-tag">₹1,999 <span class="fs-6 text-muted">/ one-time</span></p>
 
-                <ul class="feature-list">
-                    <li>✔ Verified Badge on Profile</li>
-                    <li>✔ Priority in Search Results</li>
-                    <li>✔ Unlimited Session Bookings</li>
-                    <li>✔ Direct WhatsApp Contact Button</li>
-                    <li>✔ Coach Dashboard Insights</li>
+                <ul class="feature-list list-unstyled">
+                    <li>✅ Verified Badge on Profile</li>
+                    <li>✅ Priority in Search Results</li>
+                    <li>✅ Unlimited Session Bookings</li>
+                    <li>✅ Coach Dashboard Insights</li>
                 </ul>
 
                 <form action="{{ url_for('create_checkout_session', plan='coach_premium') }}" method="POST">
@@ -52,7 +64,6 @@
             </div>
         </div>
 
-        <!-- ACADEMY PRO -->
         <div class="col-md-5">
             <div class="pricing-card bg-white shadow-sm">
                 <h3 class="plan-name text-success">Academy Pro</h3>
@@ -60,12 +71,11 @@
 
                 <p class="price-tag">₹4,999 <span class="fs-6 text-muted">/ one-time</span></p>
 
-                <ul class="feature-list">
-                    <li>✔ Hire Multiple Coaches</li>
-                    <li>✔ Academy Verification Badge</li>
-                    <li>✔ Priority Support</li>
-                    <li>✔ Bulk Booking Management</li>
-                    <li>✔ Advanced Team Dashboard</li>
+                <ul class="feature-list list-unstyled">
+                    <li>✅ Hire Multiple Coaches</li>
+                    <li>✅ Academy Verification Badge</li>
+                    <li>✅ Bulk Booking Management</li>
+                    <li>✅ Advanced Team Dashboard</li>
                 </ul>
 
                 <form action="{{ url_for('create_checkout_session', plan='academy_pro') }}" method="POST">
@@ -74,6 +84,56 @@
             </div>
         </div>
     </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h3 class="text-center mb-4 fw-bold">Frequently Asked Questions</h3>
+            
+            <div class="accordion shadow-sm" id="pricingFAQ">
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            Is this a one-time payment or a monthly subscription?
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#pricingFAQ">
+                        <div class="accordion-body">
+                            It is a <strong>one-time payment</strong>. Once you upgrade, you keep the Pro features for the lifetime of your account. No hidden monthly fees!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Can I get a refund if I'm not satisfied?
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#pricingFAQ">
+                        <div class="accordion-body">
+                            We offer a 7-day money-back guarantee if you haven't received any booking inquiries. Contact support with your transaction ID for assistance.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            How do I contact support?
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#pricingFAQ">
+                        <div class="accordion-body">
+                            You can reach our dedicated support team at <strong>support@gamechanger.com</strong> or visit our <a href="{{ url_for('help_center') }}">Help Center</a>.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {% endblock %}
