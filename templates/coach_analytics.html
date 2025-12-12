@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 serif-font mb-0">Analytics & Earnings</h1>
+            <p class="text-muted">Track your performance and revenue</p>
+        </div>
+        <a href="{{ url_for('coach_dashboard') }}" class="btn btn-outline-dark rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Earnings Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="opacity-75">Total Earnings</small>
+                    <i class="bi bi-currency-rupee fs-4 opacity-75"></i>
+                </div>
+                <h2 class="mb-0 fw-bold">₹{{ total_earnings }}</h2>
+                <small class="opacity-75">All time</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="opacity-75">This Month</small>
+                    <i class="bi bi-calendar-month fs-4 opacity-75"></i>
+                </div>
+                <h2 class="mb-0 fw-bold">₹{{ monthly_earnings }}</h2>
+                <small class="opacity-75">{{ current_month }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="opacity-75">Completed Sessions</small>
+                    <i class="bi bi-check-circle fs-4 opacity-75"></i>
+                </div>
+                <h2 class="mb-0 fw-bold">{{ completed_sessions }}</h2>
+                <small class="opacity-75">Total bookings</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="opacity-75">Avg. per Session</small>
+                    <i class="bi bi-graph-up fs-4 opacity-75"></i>
+                </div>
+                <h2 class="mb-0 fw-bold">₹{{ avg_per_session }}</h2>
+                <small class="opacity-75">Average rate</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Booking Trends -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <h5 class="mb-0">Booking Trends</h5>
+                    <small class="text-muted">Last 6 months</small>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th class="text-end">Bookings</th>
+                                    <th class="text-end">Earnings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for month_data in monthly_stats %}
+                                <tr>
+                                    <td>{{ month_data.month }}</td>
+                                    <td class="text-end fw-bold">{{ month_data.bookings }}</td>
+                                    <td class="text-end fw-bold text-success">₹{{ month_data.earnings }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Time Slots -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <h5 class="mb-0">Popular Time Slots</h5>
+                    <small class="text-muted">Most booked times</small>
+                </div>
+                <div class="card-body p-4">
+                    {% if popular_times %}
+                        <div class="list-group list-group-flush">
+                            {% for time_slot in popular_times %}
+                            <div class="list-group-item border-0 px-0 py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-clock me-2 text-primary"></i>
+                                        <strong>{{ time_slot.time }}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                            {{ time_slot.count }} booking{{ 's' if time_slot.count != 1 else '' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">No booking data available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-4">
+            <!-- Sport Breakdown -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <h5 class="mb-0">By Sport</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if sport_stats %}
+                        {% for sport_stat in sport_stats %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <div>
+                                <i class="bi bi-trophy me-2 text-primary"></i>
+                                <strong>{{ sport_stat.sport }}</strong>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ sport_stat.count }}</div>
+                                <small class="text-muted">sessions</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted small mb-0">No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Earnings -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <h5 class="mb-0">Recent Earnings</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if recent_earnings %}
+                        <div class="list-group list-group-flush">
+                            {% for earning in recent_earnings %}
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block">{{ earning.date }}</small>
+                                        <small>{{ earning.sport }} session</small>
+                                    </div>
+                                    <strong class="text-success">₹{{ earning.amount }}</strong>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">No earnings yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@ import json
 import random
 import string
 from datetime import datetime
+from collections import defaultdict
 from flask import (
     Flask,
     render_template,
@@ -185,7 +186,7 @@ class Coach(db.Model):
     city = db.Column(db.String(120), nullable=False)
     price_per_session = db.Column(db.Integer, nullable=False)
     experience_years = db.Column(db.Integer, default=0)
-    rating = db.Column(db.Float, default=4.5)
+    rating = db.Column(db.Float, default=0.0)
     tagline = db.Column(db.String(255))
     specialties = db.Column(db.Text)
     age = db.Column(db.Integer)
@@ -226,6 +227,17 @@ class Coach(db.Model):
             return json.loads(self.sports_prices) if self.sports_prices else {}
         except Exception:
             return {}
+    
+    def calculate_rating(self):
+        """Calculate average rating from reviews. Returns 0.0 if no reviews."""
+        if not self.reviews:
+            return 0.0
+        total_rating = sum([r.rating for r in self.reviews])
+        return round(total_rating / len(self.reviews), 1)
+    
+    def get_rating_display(self):
+        """Get rating for display. Returns 0.0 if no reviews."""
+        return self.calculate_rating()
 
 
 class Booking(db.Model):
@@ -329,11 +341,9 @@ def add_review(coach_id):
 
     db.session.commit()
 
-    all_reviews = Review.query.filter_by(coach_id=coach.id).all()
-    if all_reviews:
-        avg_rating = sum([r.rating for r in all_reviews]) / len(all_reviews)
-        coach.rating = round(avg_rating, 1)
-        db.session.commit()
+    # Calculate and update coach rating based on all reviews
+    coach.rating = coach.calculate_rating()
+    db.session.commit()
 
     flash("Review submitted successfully!", "success")
     return redirect(url_for("coach_detail", slug=coach.slug))
@@ -457,8 +467,94 @@ def admin_email():
 
 @app.route("/")
 def home():
-    top_coaches = Coach.query.order_by(Coach.rating.desc()).limit(3).all()
-    return render_template("home.html", coaches=top_coaches)
+    # Try to load top coaches from DB (6 items)
+    # Get top coaches with ratings > 0, then coaches with 0 rating
+    top_coaches = Coach.query.filter(Coach.rating > 0).order_by(Coach.rating.desc()).limit(6).all()
+    if len(top_coaches) < 6:
+        zero_rating_coaches = Coach.query.filter(Coach.rating == 0.0).limit(6 - len(top_coaches)).all()
+        top_coaches.extend(zero_rating_coaches)
+    stats = {
+        "active_impressions": "3.2k",              # display-friendly string
+        "total_coaches": Coach.query.count(),      # integer
+        "total_bookings": Booking.query.count(),   # integer
+    }
+    # If no coaches (fresh DB), provide lightweight sample placeholders
+    if not top_coaches or len(top_coaches) == 0:
+        sample = [
+            {
+                "name": "Rahul Sharma",
+                "slug": "rahul-sharma-cricket",
+                "profile_image": "",
+                "sport": "Cricket",
+                "price_per_session": 500,
+                "rating": 4.8,
+                "tagline": "Batting technique & nets specialist",
+                "is_verified": True,
+                "city": "Mumbai"
+            },
+            {
+                "name": "Meera Patel",
+                "slug": "meera-patel-tennis",
+                "profile_image": "",
+                "sport": "Tennis",
+                "price_per_session": 700,
+                "rating": 4.7,
+                "tagline": "Footwork, serve & volley coach",
+                "is_verified": True,
+                "city": "Pune"
+            },
+            {
+                "name": "Aditya Rao",
+                "slug": "aditya-rao-badminton",
+                "profile_image": "",
+                "sport": "Badminton",
+                "price_per_session": 400,
+                "rating": 4.6,
+                "tagline": "Speed & agility trainer",
+                "is_verified": False,
+                "city": "Bengaluru"
+            },
+            {
+                "name": "Priya Singh",
+                "slug": "priya-singh-swimming",
+                "profile_image": "",
+                "sport": "Swimming",
+                "price_per_session": 600,
+                "rating": 4.9,
+                "tagline": "Stroke correction & fitness",
+                "is_verified": True,
+                "city": "Chennai"
+            },
+            {
+                "name": "Vikram Das",
+                "slug": "vikram-das-football",
+                "profile_image": "",
+                "sport": "Football",
+                "price_per_session": 450,
+                "rating": 4.5,
+                "tagline": "Strikers & small-sided games coach",
+                "is_verified": False,
+                "city": "Delhi"
+            },
+            {
+                "name": "Ananya Roy",
+                "slug": "ananya-roy-basketball",
+                "profile_image": "",
+                "sport": "Basketball",
+                "price_per_session": 550,
+                "rating": 4.6,
+                "tagline": "Shooting & ball-handling coach",
+                "is_verified": True,
+                "city": "Kolkata"
+            },
+        ]
+        # mark them as simple objects with attribute access for templates
+        class _S:
+            def __init__(self, d):
+                self.__dict__.update(d)
+        top_coaches = [_S(s) for s in sample]
+
+    return render_template("home.html", coaches=top_coaches,stats=stats, sports_list=SPORTS_LIST)
 
 # ---------- STATIC INFO PAGES ----------
 @app.route("/about")
@@ -499,7 +595,7 @@ def coaches():
     if price_max is not None:
         query = query.filter(Coach.price_per_session <= price_max)
 
-    # Order by best rating first
+    # Order by best rating first (coaches with ratings > 0 first, then 0 ratings)
     pagination = query.order_by(Coach.rating.desc()).paginate(
         page=page, per_page=9, error_out=False
     )
@@ -858,12 +954,28 @@ def coach_dashboard():
         received_query = apply_booking_filter(received_query)
         received_bookings = received_query.order_by(Booking.booking_date.desc()).all()
 
+    # Calculate stats for dashboard
+    stats = {}
+    if coach:
+        stats['total_bookings'] = Booking.query.filter_by(coach_id=coach.id).count()
+        stats['confirmed_bookings'] = Booking.query.filter_by(coach_id=coach.id, status='Confirmed').count()
+        stats['pending_bookings'] = Booking.query.filter_by(coach_id=coach.id, status='Pending').count()
+        stats['total_reviews'] = Review.query.filter_by(coach_id=coach.id).count()
+        stats['rating'] = coach.get_rating_display()
+    else:
+        stats['total_bookings'] = len(my_bookings)
+        stats['confirmed_bookings'] = len([b for b in my_bookings if b.status == 'Confirmed'])
+        stats['pending_bookings'] = len([b for b in my_bookings if b.status == 'Pending'])
+        stats['total_reviews'] = 0
+        stats['rating'] = 0.0
+    
     context = {
         "coach": coach,
         "sports_list": SPORTS_LIST,
         "my_bookings": my_bookings,
         "received_bookings": received_bookings,
         "booking_filter": booking_filter,
+        "stats": stats,
     }
 
     if request.method == "POST":
@@ -940,6 +1052,7 @@ def coach_dashboard():
                 profile_image=image_filename,
                 achievements=achievements,
                 travel_radius=travel_radius,
+                rating=0.0,  # Start with 0 rating
             )
             db.session.add(coach)
         else:
@@ -964,6 +1077,257 @@ def coach_dashboard():
         return redirect(url_for("coach_dashboard"))
 
     return render_template("dashboard_coach.html", **context)
+
+
+@app.route("/coach/analytics")
+@login_required
+def coach_analytics():
+    if current_user.role != "coach" or not current_user.coach_profile:
+        flash("Access denied.", "danger")
+        return redirect(url_for("home"))
+    
+    coach = current_user.coach_profile
+    from datetime import timedelta
+    
+    # Get all confirmed bookings
+    confirmed_bookings = Booking.query.filter_by(coach_id=coach.id, status="Confirmed").all()
+    
+    # Calculate total earnings
+    total_earnings = sum([coach.price_per_session for b in confirmed_bookings])
+    
+    # Monthly earnings
+    current_month = datetime.now().strftime("%B %Y")
+    this_month_start = datetime.now().replace(day=1).date()
+    monthly_bookings = [b for b in confirmed_bookings if b.booking_date >= this_month_start]
+    monthly_earnings = sum([coach.price_per_session for b in monthly_bookings])
+    
+    # Completed sessions
+    completed_sessions = len(confirmed_bookings)
+    
+    # Average per session
+    avg_per_session = coach.price_per_session if completed_sessions > 0 else 0
+    
+    # Monthly stats (last 6 months)
+    monthly_stats = []
+    for i in range(5, -1, -1):
+        month_start = (datetime.now() - timedelta(days=30*i)).replace(day=1).date()
+        month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        month_bookings = [b for b in confirmed_bookings if month_start <= b.booking_date <= month_end]
+        monthly_stats.append({
+            'month': month_start.strftime("%b %Y"),
+            'bookings': len(month_bookings),
+            'earnings': len(month_bookings) * coach.price_per_session
+        })
+    
+    # Popular time slots
+    time_counts = defaultdict(int)
+    for booking in confirmed_bookings:
+        time_counts[booking.booking_time] += 1
+    popular_times = [{'time': time, 'count': count} for time, count in sorted(time_counts.items(), key=lambda x: x[1], reverse=True)[:5]]
+    
+    # Sport breakdown
+    sport_counts = defaultdict(int)
+    for booking in confirmed_bookings:
+        sport_counts[booking.sport] += 1
+    sport_stats = [{'sport': sport, 'count': count} for sport, count in sorted(sport_counts.items(), key=lambda x: x[1], reverse=True)]
+    
+    # Recent earnings (last 10)
+    recent_earnings = []
+    for booking in sorted(confirmed_bookings, key=lambda x: x.booking_date, reverse=True)[:10]:
+        recent_earnings.append({
+            'date': booking.booking_date.strftime('%d %b %Y'),
+            'sport': booking.sport,
+            'amount': coach.price_per_session
+        })
+    
+    return render_template("coach_analytics.html",
+                         total_earnings=total_earnings,
+                         monthly_earnings=monthly_earnings,
+                         current_month=current_month,
+                         completed_sessions=completed_sessions,
+                         avg_per_session=avg_per_session,
+                         monthly_stats=monthly_stats,
+                         popular_times=popular_times,
+                         sport_stats=sport_stats,
+                         recent_earnings=recent_earnings)
+
+
+@app.route("/coach/calendar")
+@login_required
+def coach_calendar():
+    if current_user.role != "coach" or not current_user.coach_profile:
+        flash("Access denied.", "danger")
+        return redirect(url_for("home"))
+    
+    coach = current_user.coach_profile
+    import calendar
+    
+    # Get month/year from query params
+    month = request.args.get('month', type=int) or datetime.now().month
+    year = request.args.get('year', type=int) or datetime.now().year
+    
+    # Calculate prev/next month
+    if month == 1:
+        prev_month, prev_year = 12, year - 1
+    else:
+        prev_month, prev_year = month - 1, year
+    
+    if month == 12:
+        next_month, next_year = 1, year + 1
+    else:
+        next_month, next_year = month + 1, year
+    
+    # Get all bookings for this month
+    month_start = datetime(year, month, 1).date()
+    days_in_month = calendar.monthrange(year, month)[1]
+    month_end = datetime(year, month, days_in_month).date()
+    
+    bookings = Booking.query.filter_by(coach_id=coach.id).filter(
+        Booking.booking_date >= month_start,
+        Booking.booking_date <= month_end
+    ).all()
+    
+    # Organize bookings by date
+    bookings_by_date = defaultdict(list)
+    for booking in bookings:
+        bookings_by_date[booking.booking_date].append(booking)
+    
+    # Build calendar
+    cal = calendar.monthcalendar(year, month)
+    calendar_weeks = []
+    today = datetime.now().date()
+    
+    for week in cal:
+        week_data = []
+        for day in week:
+            if day == 0:
+                week_data.append(None)
+            else:
+                date_obj = datetime(year, month, day).date()
+                day_bookings = bookings_by_date.get(date_obj, [])
+                week_data.append({
+                    'date': date_obj,
+                    'has_bookings': len(day_bookings) > 0,
+                    'booking_count': len(day_bookings),
+                    'bookings': day_bookings[:3],  # Show max 3 in calendar
+                    'is_today': date_obj == today
+                })
+        calendar_weeks.append(week_data)
+    
+    # Upcoming bookings
+    upcoming_bookings = Booking.query.filter_by(coach_id=coach.id, status="Confirmed").filter(
+        Booking.booking_date >= today
+    ).order_by(Booking.booking_date.asc()).limit(10).all()
+    
+    return render_template("coach_calendar.html",
+                         current_month=month,
+                         current_year=year,
+                         current_month_name=calendar.month_name[month],
+                         prev_month=prev_month,
+                         prev_year=prev_year,
+                         next_month=next_month,
+                         next_year=next_year,
+                         calendar_weeks=calendar_weeks,
+                         upcoming_bookings=upcoming_bookings)
+
+
+@app.route("/coach/students")
+@login_required
+def coach_students():
+    if current_user.role != "coach" or not current_user.coach_profile:
+        flash("Access denied.", "danger")
+        return redirect(url_for("home"))
+    
+    coach = current_user.coach_profile
+    
+    # Get all bookings
+    all_bookings = Booking.query.filter_by(coach_id=coach.id).all()
+    
+    # Group by student
+    students_dict = defaultdict(lambda: {'bookings': [], 'student': None})
+    
+    for booking in all_bookings:
+        student_id = booking.user_id
+        if students_dict[student_id]['student'] is None:
+            students_dict[student_id]['student'] = booking.student
+        students_dict[student_id]['bookings'].append(booking)
+    
+    # Build student data list
+    students = []
+    for student_id, data in students_dict.items():
+        bookings = sorted(data['bookings'], key=lambda x: x.booking_date, reverse=True)
+        last_session = bookings[0].booking_date if bookings else None
+        students.append({
+            'student': data['student'],
+            'total_sessions': len(bookings),
+            'last_session': last_session,
+            'bookings': bookings
+        })
+    
+    # Sort by last session date (most recent first)
+    students.sort(key=lambda x: x['last_session'] or datetime.min.date(), reverse=True)
+    
+    # Calculate stats
+    total_students = len(students)
+    active_students = len([s for s in students if s['last_session'] and (datetime.now().date() - s['last_session']).days <= 30])
+    total_sessions = len(all_bookings)
+    
+    return render_template("coach_students.html",
+                         students=students,
+                         total_students=total_students,
+                         active_students=active_students,
+                         total_sessions=total_sessions)
+
+
+@app.route("/coach/reviews")
+@login_required
+def coach_reviews():
+    if current_user.role != "coach" or not current_user.coach_profile:
+        flash("Access denied.", "danger")
+        return redirect(url_for("home"))
+    
+    coach = current_user.coach_profile
+    from datetime import timedelta
+    
+    # Get filter
+    filter_type = request.args.get('filter', 'all')
+    
+    # Get all reviews
+    all_reviews = Review.query.filter_by(coach_id=coach.id).order_by(Review.created_at.desc()).all()
+    
+    # Apply filter
+    if filter_type == 'recent':
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        reviews = [r for r in all_reviews if r.created_at >= thirty_days_ago]
+    elif filter_type == '5star':
+        reviews = [r for r in all_reviews if r.rating == 5]
+    else:
+        reviews = all_reviews
+    
+    # Calculate stats
+    total_reviews = len(all_reviews)
+    overall_rating = coach.get_rating_display()
+    
+    # Rating distribution
+    rating_distribution = defaultdict(int)
+    for review in all_reviews:
+        rating_distribution[review.rating] += 1
+    
+    # Five star count
+    five_star_count = rating_distribution.get(5, 0)
+    
+    # Monthly reviews
+    this_month_start = datetime.now().replace(day=1)
+    monthly_reviews = len([r for r in all_reviews if r.created_at >= this_month_start])
+    
+    return render_template("coach_reviews.html",
+                         reviews=reviews,
+                         total_reviews=total_reviews,
+                         overall_rating=overall_rating,
+                         rating_distribution=rating_distribution,
+                         five_star_count=five_star_count,
+                         monthly_reviews=monthly_reviews,
+                         filter=filter_type)
 
 # ---------- STRIPE CHECKOUT & WEBHOOK ROUTES ----------
 

@@ -84,17 +84,28 @@
             {% for coach in coaches %}
                 <div class="col-md-4">
                     <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                        <div class="position-relative">
-                            <img 
-                                src="{{ url_for('static', filename='uploads/' + coach.profile_image) if coach.profile_image else 'https://ui-avatars.com/api/?name=' + coach.name|urlencode + '&background=random&size=128' }}" 
-                                class="w-100" 
-                                style="height: 250px; object-fit: cover;"
-                                alt="{{ coach.name }}"
-                                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ coach.name|urlencode }}&background=random&size=128';">
+                        <div class="position-relative" style="height: 250px; overflow: hidden;">
+                            {% if coach.profile_image %}
+                                <img 
+                                    src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
+                                    class="w-100 h-100" 
+                                    style="object-fit: cover;"
+                                    alt="{{ coach.name }}"
+                                    onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="gradient-avatar w-100 h-100" style="display: none;">
+                                    <span class="avatar-initial" style="font-size: 5rem;">{{ coach.name[0].upper() }}</span>
+                                </div>
+                            {% else %}
+                                <div class="gradient-avatar w-100 h-100">
+                                    <span class="avatar-initial" style="font-size: 5rem;">{{ coach.name[0].upper() }}</span>
+                                </div>
+                            {% endif %}
                             
+                            {% if coach.rating > 0 %}
                             <span class="position-absolute top-0 end-0 m-3 bg-white px-3 py-1 rounded-pill small fw-bold shadow-sm">
                                 ★ {{ coach.rating }}
                             </span>
+                            {% endif %}
                         </div>
 
                         <div class="card-body p-4">

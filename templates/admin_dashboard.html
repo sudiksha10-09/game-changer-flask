@@ -119,7 +119,21 @@
                         {% for coach in pending_coaches %}
                         <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center">
-                                <img src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
+                                {% if coach.profile_image %}
+                                    <img src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
+                                         class="rounded-circle me-3" 
+                                         width="40" 
+                                         height="40" 
+                                         style="object-fit: cover;"
+                                         onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="gradient-avatar avatar-xs me-3" style="display: none;">
+                                        <span class="avatar-initial">{{ coach.name[0].upper() }}</span>
+                                    </div>
+                                {% else %}
+                                    <div class="gradient-avatar avatar-xs me-3">
+                                        <span class="avatar-initial">{{ coach.name[0].upper() }}</span>
+                                    </div>
+                                {% endif %}
                                 <div>
                                     <h6 class="mb-0 fw-bold">{{ coach.name }}</h6>
                                     <small class="text-muted">{{ coach.city }}</small>

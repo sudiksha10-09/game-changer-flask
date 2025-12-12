@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 serif-font mb-0">Reviews Management</h1>
+            <p class="text-muted">View and manage your reviews</p>
+        </div>
+        <a href="{{ url_for('coach_dashboard') }}" class="btn btn-outline-dark rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Review Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block mb-1">Overall Rating</small>
+                        <h3 class="mb-0 fw-bold">
+                            {% if overall_rating > 0 %}
+                                {{ overall_rating }}
+                            {% else %}
+                                <span class="text-muted">0.0</span>
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded-4 p-3">
+                        <i class="bi bi-star-fill text-warning fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block mb-1">Total Reviews</small>
+                        <h3 class="mb-0 fw-bold">{{ total_reviews }}</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded-4 p-3">
+                        <i class="bi bi-chat-dots text-primary fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block mb-1">5 Star Reviews</small>
+                        <h3 class="mb-0 fw-bold text-success">{{ five_star_count }}</h3>
+                    </div>
+                    <div class="bg-success bg-opacity-10 rounded-4 p-3">
+                        <i class="bi bi-star-fill text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block mb-1">This Month</small>
+                        <h3 class="mb-0 fw-bold">{{ monthly_reviews }}</h3>
+                    </div>
+                    <div class="bg-info bg-opacity-10 rounded-4 p-3">
+                        <i class="bi bi-calendar-month text-info fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Distribution -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <h5 class="mb-0">Rating Distribution</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% for i in range(5, 0, -1) %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="d-flex align-items-center" style="width: 100px;">
+                            <span class="fw-bold me-2">{{ i }}</span>
+                            <i class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1 mx-3">
+                            <div class="progress" style="height: 8px;">
+                                {% set count = rating_distribution.get(i, 0) %}
+                                {% set percentage = (count / total_reviews * 100) if total_reviews > 0 else 0 %}
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percentage }}%"></div>
+                            </div>
+                        </div>
+                        <span class="text-muted small" style="min-width: 40px;">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Reviews List -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-light border-0 py-3 px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">All Reviews</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary {% if filter == 'all' %}active{% endif %}" 
+                                    onclick="window.location.href='{{ url_for('coach_reviews', filter='all') }}'">
+                                All
+                            </button>
+                            <button class="btn btn-outline-secondary {% if filter == 'recent' %}active{% endif %}" 
+                                    onclick="window.location.href='{{ url_for('coach_reviews', filter='recent') }}'">
+                                Recent
+                            </button>
+                            <button class="btn btn-outline-secondary {% if filter == '5star' %}active{% endif %}" 
+                                    onclick="window.location.href='{{ url_for('coach_reviews', filter='5star') }}'">
+                                5 Star
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if reviews %}
+                        <div class="list-group list-group-flush">
+                            {% for review in reviews %}
+                            <div class="list-group-item border-0 border-bottom p-4">
+                                <div class="d-flex align-items-start">
+                                    {% if review.student.profile_image %}
+                                        <img src="{{ url_for('static', filename='uploads/' + review.student.profile_image) }}"
+                                             class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;"
+                                             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="gradient-avatar avatar-md me-3" style="display: none;">
+                                            <span class="avatar-initial">{{ review.student.name[0].upper() }}</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="gradient-avatar avatar-md me-3">
+                                            <span class="avatar-initial">{{ review.student.name[0].upper() }}</span>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ review.student.name }}</h6>
+                                                <small class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</small>
+                                            </div>
+                                            <div class="d-flex">
+                                                {% for i in range(1, 6) %}
+                                                    {% if i <= review.rating %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-muted"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% if review.comment %}
+                                            <p class="mb-0">{{ review.comment }}</p>
+                                        {% else %}
+                                            <p class="text-muted small mb-0 italic">No comment provided</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center p-5">
+                            <i class="bi bi-chat-left-quote fs-1 text-muted opacity-25 mb-2"></i>
+                            <p class="text-muted">No reviews yet</p>
+                            <small class="text-muted">Reviews will appear here after students complete sessions with you.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
