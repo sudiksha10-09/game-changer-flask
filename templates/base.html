@@ -129,10 +129,13 @@
                 </div>
                 <div class="col-md-3">
                 <h6 class="text-white mb-3">Newsletter</h6>
-                <form action="{{ url_for('subscribe') }}" method="POST">
+                <form action="{{ url_for('subscribe') }}" method="POST" id="newsletterForm">
                 <div class="input-group">
-                    <input type="email" name="email" class="form-control border-0 rounded-start-pill" placeholder="Email" required>
-                    <button type="submit" class="btn btn-primary rounded-end-pill">Go</button>
+                    <input type="email" name="email" class="form-control border-0 rounded-start-pill" placeholder="Email" required id="newsletterEmail">
+                    <button type="submit" class="btn btn-primary rounded-end-pill" id="newsletterBtn">
+                        <span class="spinner spinner-sm" style="display: none;" id="newsletterSpinner"></span>
+                        <span id="newsletterBtnText">Go</span>
+                    </button>
                 </div>
                 </form>
                 </div>
@@ -160,6 +163,273 @@
             icon.classList.add("bi-eye-slash-fill");
         }
     }
+    
+    // Add loading spinner to newsletter form
+    document.addEventListener("DOMContentLoaded", function() {
+        const newsletterForm = document.getElementById('newsletterForm');
+        const newsletterBtn = document.getElementById('newsletterBtn');
+        const newsletterSpinner = document.getElementById('newsletterSpinner');
+        const newsletterBtnText = document.getElementById('newsletterBtnText');
+        
+        if (newsletterForm && newsletterBtn) {
+            newsletterForm.addEventListener('submit', function() {
+                newsletterBtn.disabled = true;
+                newsletterBtn.classList.add('btn-loading');
+                if (newsletterSpinner) newsletterSpinner.style.display = 'inline-block';
+                if (newsletterBtnText) newsletterBtnText.textContent = '...';
+            });
+        }
+    });
+    </script>
+
+    <!-- Chatbot Component -->
+    <div class="chatbot-container">
+        <div class="chatbot-window" id="chatbotWindow">
+            <div class="chatbot-header">
+                <h5><i class="bi bi-robot me-2"></i>GameChanger Assistant</h5>
+                <button class="chatbot-close" id="chatbotClose">&times;</button>
+            </div>
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="chatbot-message bot">
+                    <div class="message-bubble">
+                        👋 Hi! I'm here to help you with:
+                        <br><br>
+                        • Choosing the right coach
+                        <br>• Pricing information
+                        <br>• How booking works
+                        <br><br>
+                        Ask me anything!
+                    </div>
+                </div>
+            </div>
+            <div class="quick-questions">
+                <div class="quick-questions-title">Quick questions:</div>
+                <button class="quick-question-btn" data-question="Which coach should I choose?">Which coach should I choose?</button>
+                <button class="quick-question-btn" data-question="Pricing?">Pricing?</button>
+                <button class="quick-question-btn" data-question="How booking works?">How booking works?</button>
+                <button class="quick-question-btn" data-question="I want to get in touch">Contact Us</button>
+            </div>
+            <div class="chatbot-input-area">
+                <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type your question..." autocomplete="off">
+                <button class="chatbot-send" id="chatbotSend">
+                    <span class="spinner spinner-sm" id="chatbotSendSpinner" style="display: none;"></span>
+                    <i class="bi bi-send-fill" id="chatbotSendIcon"></i>
+                </button>
+            </div>
+        </div>
+        <button class="chatbot-button" id="chatbotToggle">
+            <i class="bi bi-chat-dots-fill"></i>
+        </button>
+    </div>
+
+    <script>
+    // Chatbot functionality
+    (function() {
+        const chatbotToggle = document.getElementById('chatbotToggle');
+        const chatbotWindow = document.getElementById('chatbotWindow');
+        const chatbotClose = document.getElementById('chatbotClose');
+        const chatbotMessages = document.getElementById('chatbotMessages');
+        const chatbotInput = document.getElementById('chatbotInput');
+        const chatbotSend = document.getElementById('chatbotSend');
+        const quickQuestionBtns = document.querySelectorAll('.quick-question-btn');
+
+        // Toggle chatbot window
+        chatbotToggle.addEventListener('click', () => {
+            chatbotWindow.classList.toggle('active');
+            if (chatbotWindow.classList.contains('active')) {
+                chatbotInput.focus();
+            }
+        });
+
+        chatbotClose.addEventListener('click', () => {
+            chatbotWindow.classList.remove('active');
+        });
+
+        // Add message to chat
+        function addMessage(text, isUser = false, showContactForm = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chatbot-message ${isUser ? 'user' : 'bot'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            // Convert markdown-style formatting to HTML
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            bubble.innerHTML = formattedText;
+            
+            messageDiv.appendChild(bubble);
+            
+            // Add contact form if needed
+            if (showContactForm) {
+                const contactForm = createContactForm();
+                messageDiv.appendChild(contactForm);
+            }
+            
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        // Create contact form
+        function createContactForm() {
+            const formDiv = document.createElement('div');
+            formDiv.className = 'chatbot-contact-form';
+            formDiv.innerHTML = `
+                <input type="text" id="contactName" placeholder="Your Name *" required>
+                <input type="tel" id="contactPhone" placeholder="Phone Number">
+                <input type="email" id="contactEmail" placeholder="Email">
+                <textarea id="contactNeeds" rows="3" placeholder="What are you looking for? (e.g., Cricket coach in Mumbai, Budget ₹500/session)"></textarea>
+                <button type="button" id="contactSubmit" class="btn-loading">
+                    <span class="spinner spinner-sm" style="display: none;"></span>
+                    <span class="btn-text">Submit</span>
+                </button>
+            `;
+            
+            const submitBtn = formDiv.querySelector('#contactSubmit');
+            const spinner = formDiv.querySelector('.spinner');
+            const btnText = formDiv.querySelector('.btn-text');
+            
+            submitBtn.addEventListener('click', async () => {
+                const name = formDiv.querySelector('#contactName').value.trim();
+                const phone = formDiv.querySelector('#contactPhone').value.trim();
+                const email = formDiv.querySelector('#contactEmail').value.trim();
+                const needs = formDiv.querySelector('#contactNeeds').value.trim();
+                
+                if (!name) {
+                    alert('Please enter your name');
+                    return;
+                }
+                
+                // Show loading
+                submitBtn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Submitting...';
+                
+                try {
+                    const response = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            phone: phone,
+                            email: email,
+                            needs: needs,
+                            source: 'chatbot'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        btnText.textContent = '✓ Submitted!';
+                        submitBtn.style.background = '#28a745';
+                        formDiv.querySelectorAll('input, textarea').forEach(input => {
+                            input.disabled = true;
+                        });
+                        addMessage('Thank you! We\'ve received your details and will get back to you soon. 😊', false);
+                    } else {
+                        throw new Error(data.message || 'Submission failed');
+                    }
+                } catch (error) {
+                    console.error('Contact form error:', error);
+                    btnText.textContent = 'Try Again';
+                    submitBtn.disabled = false;
+                    spinner.style.display = 'none';
+                    alert('There was an error submitting your details. Please try again.');
+                }
+            });
+            
+            return formDiv;
+        }
+
+        // Show loading message
+        function showLoadingMessage() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chatbot-message bot';
+            loadingDiv.id = 'chatbotLoading';
+            loadingDiv.innerHTML = '<div class="message-bubble"><span class="spinner spinner-sm spinner-dark"></span> Thinking...</div>';
+            chatbotMessages.appendChild(loadingDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            return loadingDiv;
+        }
+
+        // Remove loading message
+        function removeLoadingMessage() {
+            const loading = document.getElementById('chatbotLoading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        // Send message
+        async function sendMessage(query) {
+            if (!query.trim()) return;
+
+            addMessage(query, true);
+            chatbotInput.value = '';
+            chatbotSend.disabled = true;
+            
+            // Show loading spinner on send button
+            const sendSpinner = document.getElementById('chatbotSendSpinner');
+            const sendIcon = document.getElementById('chatbotSendIcon');
+            if (sendSpinner) sendSpinner.style.display = 'inline-block';
+            if (sendIcon) sendIcon.style.display = 'none';
+            
+            // Show loading message
+            const loadingMsg = showLoadingMessage();
+
+            try {
+                const response = await fetch('/api/chatbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                removeLoadingMessage();
+                addMessage(data.response || 'Sorry, I couldn\'t process that. Please try again.', false, data.show_contact_form);
+            } catch (error) {
+                console.error('Chatbot error:', error);
+                removeLoadingMessage();
+                addMessage('Sorry, there was an error. Please try again later.');
+            } finally {
+                chatbotSend.disabled = false;
+                if (sendSpinner) sendSpinner.style.display = 'none';
+                if (sendIcon) sendIcon.style.display = 'inline-block';
+                chatbotInput.focus();
+            }
+        }
+
+        // Send button click
+        chatbotSend.addEventListener('click', () => {
+            const query = chatbotInput.value.trim();
+            if (query) {
+                sendMessage(query);
+            }
+        });
+
+        // Enter key press
+        chatbotInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = chatbotInput.value.trim();
+                if (query) {
+                    sendMessage(query);
+                }
+            }
+        });
+
+        // Quick question buttons
+        quickQuestionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const question = btn.getAttribute('data-question');
+                sendMessage(question);
+            });
+        });
+    })();
     </script>
 </body>
 </html>

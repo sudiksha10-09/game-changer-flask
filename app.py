@@ -11,7 +11,15 @@ from flask import (
     request,
     flash,
     session,
+    jsonify,
 )
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+    GOOGLE_SHEETS_AVAILABLE = True
+except ImportError:
+    GOOGLE_SHEETS_AVAILABLE = False
+    logger.warning("Google Sheets libraries not installed. Install gspread and google-auth to enable.")
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
@@ -658,22 +666,12 @@ def coach_detail(slug):
 def book_session(coach_id):
     coach = Coach.query.get_or_404(coach_id)
 
-    # 1. Validation Logic (Same as before)
+    # 1. Validation Logic
     if current_user.role != "hirer":
         flash("Only hirers can book sessions.", "danger")
         return redirect(url_for("coach_detail", slug=coach.slug))
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-
-    # --- NEW: DOUBLE BOOKING CHECK ---
-    existing_booking = Booking.query.filter_by(
-        coach_id=coach.id,
-        booking_date=date_obj,
-        booking_time=time_slot
-    ).filter(Booking.status.in_(["Confirmed", "Payment Pending"])).first()
-
-    if existing_booking:
-        flash("This time slot is already booked. Please choose another.", "danger")
-        return redirect(url_for("coach_detail", slug=coach.slug))
+    
+    # Get form data
     sport = request.form.get("sport")
     date_str = request.form.get("date")
     time_slot = request.form.get("time")
@@ -689,6 +687,17 @@ def book_session(coach_id):
         # ... (Keep your existing date validation logic here) ...
     except ValueError:
         flash("Invalid date format.", "danger")
+        return redirect(url_for("coach_detail", slug=coach.slug))
+
+    # --- NEW: DOUBLE BOOKING CHECK ---
+    existing_booking = Booking.query.filter_by(
+        coach_id=coach.id,
+        booking_date=date_obj,
+        booking_time=time_slot
+    ).filter(Booking.status.in_(["Confirmed", "Payment Pending"])).first()
+
+    if existing_booking:
+        flash("This time slot is already booked. Please choose another.", "danger")
         return redirect(url_for("coach_detail", slug=coach.slug))
 
     # 2. Save Booking as "Payment Pending"
@@ -1259,6 +1268,190 @@ def page_not_found(e):
 def internal_server_error(e):
     # It's good practice to have a 500 handler too
     return render_template("404.html"), 500  # You can reuse 404 or make a 500.html
+
+# ---------- GOOGLE SHEETS INTEGRATION ----------
+def save_to_google_sheets(name, phone, email, needs, source="contact_form"):
+    """
+    Save user details to Google Sheets.
+    Requires GOOGLE_SHEETS_CREDENTIALS (JSON string) and GOOGLE_SHEET_ID in .env
+    """
+    if not GOOGLE_SHEETS_AVAILABLE:
+        logger.warning("Google Sheets not available - skipping save")
+        return False
+    
+    try:
+        credentials_json = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+        sheet_id = os.getenv("GOOGLE_SHEET_ID")
+        
+        if not credentials_json or not sheet_id:
+            logger.warning("Google Sheets credentials not configured")
+            return False
+        
+        # Parse credentials JSON string
+        creds_dict = json.loads(credentials_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=[
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ])
+        
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(sheet_id).sheet1
+        
+        # Append row: Timestamp, Name, Phone, Email, Needs, Source
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            name,
+            phone or "",
+            email or "",
+            needs or "",
+            source
+        ]
+        sheet.append_row(row)
+        logger.info(f"Saved user details to Google Sheets: {name}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error saving to Google Sheets: {e}")
+        return False
+
+# ---------- CONTACT/LEAD CAPTURE ROUTE ----------
+@app.route("/api/contact", methods=["POST"])
+def contact_submit():
+    """Handle contact form submissions and save to Google Sheets."""
+    data = request.get_json()
+    
+    name = data.get("name", "").strip()
+    phone = data.get("phone", "").strip()
+    email = data.get("email", "").strip()
+    needs = data.get("needs", "").strip()
+    source = data.get("source", "contact_form")
+    
+    if not name:
+        return jsonify({"success": False, "message": "Name is required"}), 400
+    
+    # Save to Google Sheets
+    saved = save_to_google_sheets(name, phone, email, needs, source)
+    
+    if saved:
+        return jsonify({
+            "success": True,
+            "message": "Thank you! We'll get back to you soon."
+        })
+    else:
+        # Even if Google Sheets fails, return success (graceful degradation)
+        return jsonify({
+            "success": True,
+            "message": "Thank you! We'll get back to you soon."
+        })
+
+# ---------- CHATBOT ROUTE ----------
+@app.route("/api/chatbot", methods=["POST"])
+def chatbot():
+    """Handle chatbot queries for coach selection, pricing, and booking info."""
+    data = request.get_json()
+    query = data.get("query", "").lower().strip()
+    
+    # Coach selection query
+    if any(keyword in query for keyword in ["which coach", "choose coach", "select coach", "find coach", "coach recommendation", "best coach"]):
+        # Get some stats to make response dynamic
+        total_coaches = Coach.query.count()
+        verified_coaches = Coach.query.filter_by(is_verified=True).count()
+        top_rated = Coach.query.filter(Coach.rating > 0).order_by(Coach.rating.desc()).limit(3).all()
+        
+        response = "Here's how to choose the right coach for you:\n\n"
+        response += "1. **Sport & Expertise**: Filter by your sport (Cricket, Football, Badminton, etc.)\n"
+        response += "2. **Location**: Choose coaches in your city or check their travel radius\n"
+        response += "3. **Budget**: Compare prices per session (₹400-₹700+ range)\n"
+        response += "4. **Ratings**: Look for verified coaches with high ratings (★4.5+)\n"
+        response += "5. **Experience**: Check years of experience and achievements\n\n"
+        
+        if top_rated:
+            response += "**Top Rated Coaches:**\n"
+            for coach in top_rated:
+                response += f"• {coach.name} - {coach.sport.split(',')[0]} (★{coach.rating}) - ₹{coach.price_per_session}/session\n"
+            response += "\n"
+        
+        response += f"We have {total_coaches} coaches available, with {verified_coaches} verified professionals.\n\n"
+        response += "💡 **Tip**: Use filters on the 'Find a Mentor' page to narrow down by sport, city, and price range!"
+        
+        return jsonify({"response": response, "type": "coach_selection"})
+    
+    # Pricing query
+    elif any(keyword in query for keyword in ["pricing", "price", "cost", "fee", "how much", "prices", "subscription", "plan"]):
+        # Get average session price
+        coaches_with_price = Coach.query.filter(Coach.price_per_session > 0).all()
+        avg_price = sum(c.price_per_session for c in coaches_with_price) / len(coaches_with_price) if coaches_with_price else 500
+        min_price = min((c.price_per_session for c in coaches_with_price), default=400)
+        max_price = max((c.price_per_session for c in coaches_with_price), default=700)
+        
+        response = "**Pricing Information:**\n\n"
+        response += "**Session-Based Pricing:**\n"
+        response += f"• Coaches set their own rates: ₹{int(min_price)} - ₹{int(max_price)} per session (average ₹{int(avg_price)})\n"
+        response += "• You pay per session when booking\n"
+        response += "• Free coaches are also available (₹0/session)\n\n"
+        
+        response += "**Premium Plans (One-Time Payment):**\n"
+        response += "• **Coach Pro**: ₹1,999 - Verified badge, priority search, unlimited bookings, dashboard insights\n"
+        response += "• **Academy Pro**: ₹4,999 - For academies: hire multiple coaches, bulk management, team dashboard\n\n"
+        
+        response += "💡 **Note**: Premium plans are one-time payments, not monthly subscriptions. Visit the Pricing page for details!"
+        
+        return jsonify({"response": response, "type": "pricing"})
+    
+    # Booking process query
+    elif any(keyword in query for keyword in ["how booking", "booking works", "how to book", "book session", "booking process", "how do i book"]):
+        response = "**How Booking Works:**\n\n"
+        response += "**Step 1: Find a Coach**\n"
+        response += "• Browse coaches on the 'Find a Mentor' page\n"
+        response += "• Filter by sport, city, and budget\n"
+        response += "• Click on a coach to view their profile\n\n"
+        
+        response += "**Step 2: Book a Session**\n"
+        response += "• Select your sport from the coach's offerings\n"
+        response += "• Choose a date and time slot\n"
+        response += "• Add location and any special message\n"
+        response += "• Click 'Book Session'\n\n"
+        
+        response += "**Step 3: Payment**\n"
+        response += "• For paid coaches: Complete payment via Stripe (secure checkout)\n"
+        response += "• For free coaches: Booking is confirmed immediately\n"
+        response += "• You'll receive email confirmation\n\n"
+        
+        response += "**Step 4: Session**\n"
+        response += "• Coach confirms the booking\n"
+        response += "• Attend your session at the agreed location\n"
+        response += "• After completion, you can leave a review\n\n"
+        
+        response += "💡 **Note**: You need to be logged in as a student/hirer to book. Coaches cannot book their own sessions."
+        
+        return jsonify({"response": response, "type": "booking"})
+    
+    # Collect user details query
+    elif any(keyword in query for keyword in ["contact", "get in touch", "reach out", "connect", "help me", "interested"]):
+        response = "I'd love to help! Please share your details:\n\n"
+        response += "**Quick Contact Form**\n"
+        response += "Fill in your name, phone number, and what you're looking for, and we'll get back to you!\n\n"
+        response += "Or you can ask me:\n"
+        response += "• 'Which coach should I choose?'\n"
+        response += "• 'Pricing?'\n"
+        response += "• 'How booking works?'"
+        
+        return jsonify({
+            "response": response,
+            "type": "contact",
+            "show_contact_form": True
+        })
+    
+    # Default/fallback response
+    else:
+        response = "I can help you with:\n\n"
+        response += "• **Coach Selection**: Ask 'Which coach should I choose?'\n"
+        response += "• **Pricing**: Ask 'What are the prices?' or 'Pricing?'\n"
+        response += "• **Booking**: Ask 'How does booking work?'\n"
+        response += "• **Contact**: Ask 'I want to get in touch' or 'Contact us'\n\n"
+        response += "Try asking one of these questions!"
+        
+        return jsonify({"response": response, "type": "general"})
 
 if __name__ == "__main__":
     with app.app_context():

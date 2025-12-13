@@ -71,7 +71,10 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill mb-4 shadow-sm">Create Account</button>
+                <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill mb-4 shadow-sm" id="registerBtn">
+                    <span class="spinner spinner-sm" style="display: none;" id="registerSpinner"></span>
+                    <span id="registerBtnText">Create Account</span>
+                </button>
 
                 <div class="text-center">
                     <p class="text-muted small">Already a member? <a href="{{ url_for('login') }}" class="text-dark text-decoration-none fw-bold">Sign In</a></p>
@@ -106,6 +109,21 @@
     }
     document.addEventListener("DOMContentLoaded", function() {
         toggleOrgOption();
+        
+        // Add loading spinner to register form
+        const registerForm = document.querySelector('form');
+        const registerBtn = document.getElementById('registerBtn');
+        const registerSpinner = document.getElementById('registerSpinner');
+        const registerBtnText = document.getElementById('registerBtnText');
+        
+        if (registerForm && registerBtn) {
+            registerForm.addEventListener('submit', function() {
+                registerBtn.disabled = true;
+                registerBtn.classList.add('btn-loading');
+                registerSpinner.style.display = 'inline-block';
+                registerBtnText.textContent = 'Creating Account...';
+            });
+        }
     });
 </script>
 {% endblock %}

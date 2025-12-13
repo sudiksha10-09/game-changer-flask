@@ -44,7 +44,10 @@
                     <a href="#" class="text-decoration-none small text-muted fw-bold">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-dark w-100 btn-lg rounded-pill mb-4 shadow-sm">Sign In</button>
+                <button type="submit" class="btn btn-dark w-100 btn-lg rounded-pill mb-4 shadow-sm" id="loginBtn">
+                    <span class="spinner spinner-sm" style="display: none;" id="loginSpinner"></span>
+                    <span id="loginBtnText">Sign In</span>
+                </button>
 
                 <div class="text-center">
                     <p class="text-muted small">Don't have an account? <a href="{{ url_for('register') }}" class="text-dark text-decoration-none fw-bold">Join Now</a></p>
@@ -53,4 +56,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Add loading spinner to login form
+        const loginForm = document.querySelector('form');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginSpinner = document.getElementById('loginSpinner');
+        const loginBtnText = document.getElementById('loginBtnText');
+        
+        if (loginForm && loginBtn) {
+            loginForm.addEventListener('submit', function() {
+                loginBtn.disabled = true;
+                loginBtn.classList.add('btn-loading');
+                loginSpinner.style.display = 'inline-block';
+                loginBtnText.textContent = 'Signing In...';
+            });
+        }
+    });
+</script>
 {% endblock %}
