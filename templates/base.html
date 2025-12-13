@@ -67,12 +67,7 @@
                                     {% endif %}
                                     
                                     {% if current_user.role == 'coach' %}
-                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Coach Dashboard</a></li>
-                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_analytics') }}"><i class="bi bi-graph-up me-2"></i>Analytics & Earnings</a></li>
-                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_calendar') }}"><i class="bi bi-calendar3 me-2"></i>Calendar View</a></li>
-                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_students') }}"><i class="bi bi-people me-2"></i>My Students</a></li>
-                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_reviews') }}"><i class="bi bi-star me-2"></i>Reviews</a></li>
-                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Coach Dashboard</a></li>
                                     {% elif current_user.is_organization %}
                                         <li><a class="dropdown-item rounded-3" href="{{ url_for('coach_dashboard') }}">Recruiter Dashboard</a></li>
                                         <li><a class="dropdown-item rounded-3 text-primary" href="{{ url_for('plans') }}">Upgrade Plan</a></li>
