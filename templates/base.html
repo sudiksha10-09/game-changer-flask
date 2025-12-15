@@ -11,30 +11,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <!-- Modern App Loading Screen -->
-    <div id="appLoader" class="app-loader">
-        <div class="loader-content">
-           
-            <!-- Logo Animation -->
-            <div class="loader-logo">
-                <h1 class="loader-brand">GameChanger<span class="text-primary">.</span></h1>
-                <div class="loader-tagline">Elevating Your Game</div>
-            </div>
-            
-            <!-- Progress Bar -->
-            <div class="loader-progress">
-                <div class="progress-bar-fill"></div>
-            </div>
-            
-            <!-- Loading Text -->
-            <div class="loader-text">
-                <span class="loading-dots">
-                    <span>.</span><span>.</span><span>.</span>
-                </span>
-            </div>
-        </div>
-    </div>
-
     <nav class="navbar navbar-expand-lg sticky-top py-3" style="background-color: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px);">
         <div class="container">
             <a class="navbar-brand fs-3 fw-bold serif-font" href="{{ url_for('home') }}" style="letter-spacing: -1px;">
@@ -256,24 +232,25 @@
             </div>
             <div class="chatbot-messages" id="chatbotMessages">
                 <div class="chatbot-message bot">
-                    <div class="message-bubble">
-                        <div class="greeting-icon">
-                            <i class="bi bi-hand-thumbs-up"></i>
-                        </div>
-                        <div class="greeting-text">
-                            <strong>Hi there!</strong> I'm here to help you with:
-                        </div>
-                        <ul class="help-list">
-                            <li><i class="bi bi-person-check"></i> Choosing the right coach</li>
-                            <li><i class="bi bi-currency-dollar"></i> Pricing information</li>
-                            <li><i class="bi bi-calendar-check"></i> How booking works</li>
-                        </ul>
-                        <div class="help-footer">
-                            <i class="bi bi-chat-dots"></i> Ask me anything!
-                        </div>
+                    <div class="message-bubble message-bubble-intro">
+                    <div class="greeting-icon">
+                        <i class="bi bi-hand-thumbs-up"></i>
+                    </div>
+                    <div class="greeting-text">
+                        <strong>Hi there!</strong> I’m here to help you with:
+                    </div>
+                    <ul class="help-list">
+                        <li><i class="bi bi-person-check"></i> Choosing the right coach</li>
+                        <li><i class="bi bi-currency-rupee"></i> Pricing and packages</li>
+                        <li><i class="bi bi-calendar-check"></i> How booking works</li>
+                    </ul>
+                    <div class="help-footer">
+                        <i class="bi bi-chat-dots"></i>
+                        Ask me anything about GameChanger.
+                    </div>
                     </div>
                 </div>
-            </div>
+                </div>
             <div class="quick-questions">
                 <div class="quick-questions-title">Quick questions:</div>
                 <button class="quick-question-btn" data-question="Which coach should I choose?">Which coach should I choose?</button>

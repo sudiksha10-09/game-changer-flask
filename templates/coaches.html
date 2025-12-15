@@ -3,48 +3,52 @@
 {% block content %}
 
 <div class="container py-4 py-lg-5">
-    <!-- HERO + FILTER CARD -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-4">
-            <h1 class="h3 serif-font mb-2">Find your GameChanger Coach</h1>
-            <p class="text-muted small mb-3">
-                Filter by sport, city and budget to match with verified coaches.
-            </p>
-            <div>
-                {% if sport_filter or city_filter or price_min is not none or price_max is not none %}
-                    <div class="mb-2 small text-muted">Active filters:</div>
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        {% if sport_filter %}
-                            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary">
-                                <i class="bi bi-trophy me-1"></i> {{ sport_filter }}
-                            </span>
-                        {% endif %}
-                        {% if city_filter %}
-                            <span class="badge rounded-pill bg-dark bg-opacity-10 text-dark">
-                                <i class="bi bi-geo-alt me-1"></i> {{ city_filter }}
-                            </span>
-                        {% endif %}
-                        {% if price_min is not none %}
-                            <span class="badge rounded-pill bg-success bg-opacity-10 text-success">
-                                Min ₹{{ price_min }}
-                            </span>
-                        {% endif %}
-                        {% if price_max is not none %}
-                            <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger">
-                                Max ₹{{ price_max }}
-                            </span>
-                        {% endif %}
-                    </div>
-                    <a href="{{ url_for('coaches') }}" class="small text-decoration-none">Clear filters</a>
-                {% else %}
-                    <small class="text-muted">Tip: Try "Cricket, Mumbai, under ₹1000"</small>
-                {% endif %}
-            </div>
-        </div>
 
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4">
-                <form method="get" class="row g-3 align-items-end">
+    <!-- HERO + FILTERS WRAPPER -->
+    <div class="coaches-hero card border-0 rounded-4 mb-4 p-3 p-md-4">
+        <div class="row g-4 align-items-start">
+            <!-- LEFT: TITLE + TIP / ACTIVE FILTERS -->
+            <div class="col-lg-4">
+                <h1 class="h3 serif-font mb-2">Find your GameChanger Coach</h1>
+                <p class="text-muted small mb-3">
+                    Filter by sport, city and budget to match with verified coaches.
+                </p>
+
+                <div>
+                    {% if sport_filter or city_filter or price_min is not none or price_max is not none %}
+                        <div class="mb-2 small text-muted">Active filters:</div>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            {% if sport_filter %}
+                                <span class="badge filter-badge filter-badge-sport">
+                                    <i class="bi bi-trophy me-1"></i> {{ sport_filter }}
+                                </span>
+                            {% endif %}
+                            {% if city_filter %}
+                                <span class="badge filter-badge filter-badge-city">
+                                    <i class="bi bi-geo-alt me-1"></i> {{ city_filter }}
+                                </span>
+                            {% endif %}
+                            {% if price_min is not none %}
+                                <span class="badge filter-badge filter-badge-price">
+                                    Min ₹{{ price_min }}
+                                </span>
+                            {% endif %}
+                            {% if price_max is not none %}
+                                <span class="badge filter-badge filter-badge-price">
+                                    Max ₹{{ price_max }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('coaches') }}" class="small text-decoration-none">Clear filters</a>
+                    {% else %}
+                        <small class="text-muted">Tip: Try "Cricket, Mumbai, under ₹1000"</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- RIGHT: FILTER FORM -->
+            <div class="col-lg-8">
+                <form method="get" class="row g-3 align-items-end coach-filters">
                     <div class="col-md-4">
                         <label class="form-label small text-muted">Sport</label>
                         <select name="sport" class="form-select form-select-sm">
@@ -57,20 +61,33 @@
 
                     <div class="col-md-4">
                         <label class="form-label small text-muted">City</label>
-                        <input type="text" name="city" class="form-control form-control-sm" placeholder="e.g. Mumbai" value="{{ city_filter or '' }}">
+                        <input type="text"
+                               name="city"
+                               class="form-control form-control-sm"
+                               placeholder="e.g. Mumbai"
+                               value="{{ city_filter or '' }}">
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label small text-muted">Budget / session (₹)</label>
                         <div class="d-flex gap-2">
-                            <input type="number" name="price_min" class="form-control form-control-sm" placeholder="Min" value="{{ price_min if price_min is not none else '' }}">
-                            <input type="number" name="price_max" class="form-control form-control-sm" placeholder="Max" value="{{ price_max if price_max is not none else '' }}">
+                            <input type="number"
+                                   name="price_min"
+                                   class="form-control form-control-sm"
+                                   placeholder="Min"
+                                   value="{{ price_min if price_min is not none else '' }}">
+                            <input type="number"
+                                   name="price_max"
+                                   class="form-control form-control-sm"
+                                   placeholder="Max"
+                                   value="{{ price_max if price_max is not none else '' }}">
                         </div>
                     </div>
 
                     <div class="col-md-12 d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">
-                            <i class="bi bi-funnel me-1"></i> Apply Filters
+                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 coach-filters-apply">
+                            <i class="bi bi-funnel"></i>
+                            <span>Apply Filters</span>
                         </button>
                     </div>
                 </form>
@@ -78,17 +95,18 @@
         </div>
     </div>
 
-    <!-- COACH CARDS GRID using EXACT same card HTML as home.html -->
+    <!-- COACH CARDS GRID -->
     <div class="row g-4 mb-5">
         {% if coaches %}
             {% for coach in coaches %}
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                    <div class="card h-100 border-0 rounded-4 hover-lift coach-card">
+                        <!-- IMAGE / INITIALS -->
                         <div class="position-relative" style="height: 250px; overflow: hidden;">
                             {% if coach.profile_image %}
-                                <img 
-                                    src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}" 
-                                    class="w-100 h-100" 
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}"
+                                    class="w-100 h-100"
                                     style="object-fit: cover;"
                                     alt="{{ coach.name }}"
                                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -100,29 +118,42 @@
                                     <span class="avatar-initial" style="font-size: 5rem;">{{ coach.name[0].upper() }}</span>
                                 </div>
                             {% endif %}
-                            
+
                             {% if coach.rating > 0 %}
-                            <span class="position-absolute top-0 end-0 m-3 bg-white px-3 py-1 rounded-pill small fw-bold shadow-sm">
-                                ★ {{ coach.rating }}
-                            </span>
+                                <span class="position-absolute top-0 end-0 m-3 bg-white px-3 py-1 rounded-pill small fw-bold shadow-sm">
+                                    ★ {{ coach.rating }}
+                                </span>
                             {% endif %}
                         </div>
 
+                        <!-- BODY -->
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-primary fw-bold small text-uppercase">{{ coach.sport.split(',')[0] }}</span>
+                                <span class="coach-card-sport">
+                                    {{ coach.sport.split(',')[0] }}
+                                </span>
                                 {% if coach.is_verified %}
                                     <i class="bi bi-patch-check-fill text-primary" title="Verified"></i>
                                 {% endif %}
                             </div>
 
-                            <h4 class="card-title mb-1 fw-bold">{{ coach.name }}</h4>
-                            <p class="text-muted small mb-3 text-truncate">{{ coach.tagline }}</p>
+                            <h4 class="card-title coach-card-title mb-1 fw-bold">
+                                {{ coach.name }}
+                            </h4>
+                            <p class="text-muted small mb-3 text-truncate">
+                                {{ coach.tagline }}
+                            </p>
+
                             <hr class="opacity-10">
 
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">₹{{ coach.price_per_session }} <span class="fw-normal text-muted small">/ session</span></span>
-                                <a href="{{ url_for('coach_detail', slug=coach.slug) }}" class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <span class="fw-bold coach-card-price">
+                                    ₹{{ coach.price_per_session }}
+                                    <span>/ session</span>
+                                </span>
+                                <a href="{{ url_for('coach_detail', slug=coach.slug) }}"
+                                   class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
+                                   style="width: 40px; height: 40px;">
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
@@ -136,26 +167,34 @@
                     <i class="bi bi-search fs-1 text-muted opacity-25 mb-3"></i>
                     <p class="text-muted mb-2">No coaches match your filters right now.</p>
                     <p class="small text-muted mb-3">Try removing one or more filters, or searching another city/sport.</p>
-                    <a href="{{ url_for('coaches') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">Reset filters</a>
+                    <a href="{{ url_for('coaches') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">
+                        Reset filters
+                    </a>
                 </div>
             </div>
         {% endif %}
     </div>
 
-    <!-- Pagination -->
+    <!-- PAGINATION -->
     {% if pagination.pages > 1 %}
         <div class="d-flex justify-content-center mt-4">
             <nav aria-label="Coaches pagination">
                 <ul class="pagination pagination-sm">
                     {% if pagination.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('coaches', page=pagination.prev_num, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">&laquo;</a>
+                            <a class="page-link"
+                               href="{{ url_for('coaches', page=pagination.prev_num, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">
+                                &laquo;
+                            </a>
                         </li>
                     {% endif %}
                     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                         {% if p %}
                             <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('coaches', page=p, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">{{ p }}</a>
+                                <a class="page-link"
+                                   href="{{ url_for('coaches', page=p, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">
+                                    {{ p }}
+                                </a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -163,7 +202,10 @@
                     {% endfor %}
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('coaches', page=pagination.next_num, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">&raquo;</a>
+                            <a class="page-link"
+                               href="{{ url_for('coaches', page=pagination.next_num, sport=sport_filter, city=city_filter, price_min=price_min, price_max=price_max) }}">
+                                &raquo;
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
