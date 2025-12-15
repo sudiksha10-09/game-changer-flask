@@ -14,13 +14,7 @@
     <!-- Modern App Loading Screen -->
     <div id="appLoader" class="app-loader">
         <div class="loader-content">
-            <!-- Modern Circular Spinner -->
-            <div class="loader-spinner">
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-            </div>
-            
+           
             <!-- Logo Animation -->
             <div class="loader-logo">
                 <h1 class="loader-brand">GameChanger<span class="text-primary">.</span></h1>
@@ -162,7 +156,6 @@
                 <div class="input-group">
                     <input type="email" name="email" class="form-control border-0 rounded-start-pill" placeholder="Email" required id="newsletterEmail">
                     <button type="submit" class="btn btn-primary rounded-end-pill" id="newsletterBtn">
-                        <span class="spinner spinner-sm" style="display: none;" id="newsletterSpinner"></span>
                         <span id="newsletterBtnText">Go</span>
                     </button>
                 </div>
@@ -240,19 +233,15 @@
         }
     }
     
-    // Add loading spinner to newsletter form
     document.addEventListener("DOMContentLoaded", function() {
         const newsletterForm = document.getElementById('newsletterForm');
         const newsletterBtn = document.getElementById('newsletterBtn');
-        const newsletterSpinner = document.getElementById('newsletterSpinner');
         const newsletterBtnText = document.getElementById('newsletterBtnText');
         
         if (newsletterForm && newsletterBtn) {
             newsletterForm.addEventListener('submit', function() {
                 newsletterBtn.disabled = true;
-                newsletterBtn.classList.add('btn-loading');
-                if (newsletterSpinner) newsletterSpinner.style.display = 'inline-block';
-                if (newsletterBtnText) newsletterBtnText.textContent = '...';
+                if (newsletterBtnText) newsletterBtnText.textContent = 'Sending...';
             });
         }
     });
@@ -295,7 +284,6 @@
             <div class="chatbot-input-area">
                 <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type your question..." autocomplete="off">
                 <button class="chatbot-send" id="chatbotSend">
-                    <span class="spinner spinner-sm" id="chatbotSendSpinner" style="display: none;"></span>
                     <i class="bi bi-send-fill" id="chatbotSendIcon"></i>
                 </button>
             </div>
@@ -329,18 +317,17 @@
                     const phoneInput = formDiv.querySelector(`#contactPhone_${formId}`);
                     const emailInput = formDiv.querySelector(`#contactEmail_${formId}`);
                     const needsInput = formDiv.querySelector(`#contactNeeds_${formId}`);
-                    const spinner = formDiv.querySelector(`#contactSpinner_${formId}`);
                     const btnText = formDiv.querySelector(`#contactBtnText_${formId}`);
                     
                     if (nameInput && submitBtn) {
-                        handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, spinner, btnText, formDiv);
+                        handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, btnText, formDiv);
                     }
                 }
             }
         });
         
         // Handle contact form submission
-        async function handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, spinner, btnText, formDiv) {
+        async function handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, btnText, formDiv) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -354,9 +341,7 @@
                 return;
             }
             
-            // Show loading state
             submitBtn.disabled = true;
-            if (spinner) spinner.style.display = 'inline-block';
             if (btnText) btnText.textContent = 'Submitting...';
             
             try {
@@ -394,7 +379,6 @@
                 } catch (error) {
                     if (btnText) btnText.textContent = 'Try Again';
                     submitBtn.disabled = false;
-                    if (spinner) spinner.style.display = 'none';
                     alert('There was an error submitting your details. Please try again.');
                 }
         }
@@ -474,11 +458,6 @@
             needsInput.rows = 3;
             needsInput.placeholder = 'What are you looking for? (e.g., Cricket coach in Mumbai, Budget ₹500/session)';
             
-            const spinner = document.createElement('span');
-            spinner.className = 'spinner spinner-sm';
-            spinner.id = `contactSpinner_${formId}`;
-            spinner.style.display = 'none';
-            
             const btnText = document.createElement('span');
             btnText.className = 'btn-text';
             btnText.id = `contactBtnText_${formId}`;
@@ -487,8 +466,7 @@
             const submitBtn = document.createElement('button');
             submitBtn.type = 'button';
             submitBtn.id = `contactSubmit_${formId}`;
-            submitBtn.className = 'btn-loading';
-            submitBtn.appendChild(spinner);
+            submitBtn.className = 'btn btn-primary w-100 mt-2';
             submitBtn.appendChild(btnText);
             
             // Append all elements to form
@@ -502,14 +480,12 @@
             const handleSubmit = (e) => {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent event delegation from also firing
-                handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, spinner, btnText, formDiv);
+                handleContactSubmit(e, submitBtn, nameInput, phoneInput, emailInput, needsInput, btnText, formDiv);
             };
             
             // Mark button as having handler attached (prevents delegation from handling it)
             submitBtn.setAttribute('data-handler-attached', 'true');
             
-            // Make child elements non-interactive so clicks bubble to button
-            spinner.style.pointerEvents = 'none';
             btnText.style.pointerEvents = 'none';
             
             // Attach event listener directly to the button
@@ -525,12 +501,11 @@
             return formDiv;
         }
 
-        // Show loading message
         function showLoadingMessage() {
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'chatbot-message bot';
             loadingDiv.id = 'chatbotLoading';
-            loadingDiv.innerHTML = '<div class="message-bubble"><span class="spinner spinner-sm spinner-dark"></span> Thinking...</div>';
+            loadingDiv.innerHTML = '<div class="message-bubble">Thinking...</div>';
             chatbotMessages.appendChild(loadingDiv);
             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
             return loadingDiv;
@@ -552,12 +527,6 @@
             chatbotInput.value = '';
             chatbotSend.disabled = true;
             
-            // Show loading spinner on send button
-            const sendSpinner = document.getElementById('chatbotSendSpinner');
-            const sendIcon = document.getElementById('chatbotSendIcon');
-            if (sendSpinner) sendSpinner.style.display = 'inline-block';
-            if (sendIcon) sendIcon.style.display = 'none';
-            
             // Show loading message
             const loadingMsg = showLoadingMessage();
 
@@ -578,8 +547,6 @@
                 addMessage('Sorry, there was an error. Please try again later.');
             } finally {
                 chatbotSend.disabled = false;
-                if (sendSpinner) sendSpinner.style.display = 'none';
-                if (sendIcon) sendIcon.style.display = 'inline-block';
                 chatbotInput.focus();
             }
         }

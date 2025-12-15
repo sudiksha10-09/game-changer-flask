@@ -45,7 +45,6 @@
                 </div>
 
                 <button type="submit" class="btn btn-dark w-100 btn-lg rounded-pill mb-4 shadow-sm" id="loginBtn">
-                    <span class="spinner spinner-sm" style="display: none;" id="loginSpinner"></span>
                     <span id="loginBtnText">Sign In</span>
                 </button>
 
@@ -59,17 +58,13 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Add loading spinner to login form
         const loginForm = document.querySelector('form');
         const loginBtn = document.getElementById('loginBtn');
-        const loginSpinner = document.getElementById('loginSpinner');
         const loginBtnText = document.getElementById('loginBtnText');
         
         if (loginForm && loginBtn) {
             loginForm.addEventListener('submit', function() {
                 loginBtn.disabled = true;
-                loginBtn.classList.add('btn-loading');
-                loginSpinner.style.display = 'inline-block';
                 loginBtnText.textContent = 'Signing In...';
             });
         }

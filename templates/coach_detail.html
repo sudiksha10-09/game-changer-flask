@@ -369,7 +369,6 @@
 
                             <button type="submit"
                                     class="btn btn-primary w-100 rounded-pill" id="bookingBtn">
-                                <span class="spinner spinner-sm" style="display: none;" id="bookingSpinner"></span>
                                 <span id="bookingBtnText">Confirm Booking</span>
                             </button>
 
@@ -393,17 +392,13 @@
             dateInput.min = today;
         }
         
-        // Add loading spinner to booking form
         const bookingForm = document.querySelector('form[action*="book"]');
         const bookingBtn = document.getElementById('bookingBtn');
-        const bookingSpinner = document.getElementById('bookingSpinner');
         const bookingBtnText = document.getElementById('bookingBtnText');
         
         if (bookingForm && bookingBtn) {
             bookingForm.addEventListener('submit', function() {
                 bookingBtn.disabled = true;
-                bookingBtn.classList.add('btn-loading');
-                bookingSpinner.style.display = 'inline-block';
                 bookingBtnText.textContent = 'Processing...';
             });
         }
