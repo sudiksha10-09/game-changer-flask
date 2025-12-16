@@ -138,6 +138,18 @@ SPORTS_LIST = [
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def compute_coach_badge(coach):
+    # Ensure rating and experience are not None
+    rating = coach.rating or 0
+    exp = coach.experience_years or 0
+
+    if coach.is_verified:
+        if exp >= 5 and rating >= 4.5:
+            return "Elite Coach"
+        if exp >= 2 and rating >= 4.0:
+            return "Standard Coach"
+        return "Verified Coach"
+    return None
 
 # ---------------------------------
 # VALIDATION & SECURITY HELPERS
@@ -800,7 +812,6 @@ def help_center():
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
-
 @app.route("/coaches")
 def coaches():
     # Pagination
@@ -823,16 +834,35 @@ def coaches():
     if price_max is not None:
         query = query.filter(Coach.price_per_session <= price_max)
 
-    # Order by best rating first (coaches with ratings > 0 first, then 0 ratings)
+    # Order by best rating first
     pagination = query.order_by(Coach.rating.desc()).paginate(
         page=page, per_page=9, error_out=False
     )
 
+    coaches = pagination.items  # <-- actual list used in template
+
+    # Derive badge_label in real-time for each coach
+    for coach in coaches:
+        if coach.is_verified:
+            # Verified gets at least Standard
+            if (coach.rating or 0) >= 4.7 and (coach.experience_years or 0) >= 5:
+                coach.badge_label = "Elite Coach"
+            elif (coach.rating or 0) >= 4.3 and (coach.experience_years or 0) >= 2:
+                coach.badge_label = "Premium Coach"
+            else:
+                coach.badge_label = "Standard Coach"
+        else:
+            # Not verified but experienced
+            if (coach.rating or 0) >= 4.5 and (coach.experience_years or 0) >= 3:
+                coach.badge_label = "Trusted Coach"
+            else:
+                coach.badge_label = None  # no badge
+
     return render_template(
         "coaches.html",
         pagination=pagination,
-        coaches=pagination.items,
-        sports_list=SPORTS_LIST,   # for dropdown
+        coaches=coaches,          # only once
+        sports_list=SPORTS_LIST,
         sport_filter=sport_filter,
         city_filter=city_filter,
         price_min=price_min,
