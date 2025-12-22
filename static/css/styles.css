@@ -1365,7 +1365,6 @@ footer small {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-
 /* ============ WAVE TESTIMONIALS ============ */
 
 .gc-twave-shell {
@@ -1383,7 +1382,7 @@ footer small {
   overflow: visible;
 }
 
-/* Tighter connection between wave and quote on larger screens */
+/* Desktop spacing */
 @media (min-width: 992px) {
   .gc-twave-track {
     margin-bottom: 1.5rem;
@@ -1393,7 +1392,7 @@ footer small {
   }
 }
 
-/* SVG wave line (desktop only – hidden on small screens via d-none d-md-block) */
+/* SVG wave line */
 .gc-twave-line {
   position: absolute;
   top: 10px;
@@ -1460,7 +1459,7 @@ footer small {
   justify-content: center;
 }
 
-/* Mobile adjustments: turn into flat row */
+/* Wave avatars scrollable on smaller screens */
 @media (max-width: 768px) {
   .gc-twave-avatars {
     overflow-x: auto;
@@ -1472,67 +1471,36 @@ footer small {
     height: 64px;
   }
 }
-/* ========== MOBILE TWEAKS – HOMEPAGE & DASHBOARD ========== */
 
-/* 1) Testimonials: less cluttered on mobile */
+/* ========== MOBILE STACKED CARD (below md) ========== */
+.gc-twave-mobile-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.gc-twave-mobile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  padding: 2px;
+  background: radial-gradient(circle at top left, var(--gc-blue) 0%, var(--gc-cyan) 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gc-twave-mobile-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #FFFFFF;
+}
+
+/* Extra compact padding on very small screens */
 @media (max-width: 576px) {
-  .gc-twave-shell {
-    border-radius: 24px;
-  }
-
   .gc-twave-inner {
     padding: 18px 16px 20px;
-  }
-
-  .gc-twave-avatars {
-    margin-bottom: 10px;
-    gap: 8px;
-  }
-
-  .gc-twave-quote {
-    margin-top: 4px;
-  }
-
-  .gc-twave-avatar-ring {
-    width: 56px;
-    height: 56px;
-  }
-}
-
-/* 2) Hero spacing: avoid random big gap on very small screens */
-@media (max-width: 576px) {
-  .hero-section-supermi {
-    padding-top: 56px;
-    padding-bottom: 48px;
-  }
-
-  .hero-section-supermi .container {
-    margin-top: 0;
-  }
-}
-
-/* 3) Coach detail header alignment on mobile */
-@media (max-width: 576px) {
-  /* Center avatar + verified pill */
-  .coach-detail-page .row.g-4.mb-4.align-items-center > .col-md-3 {
-    text-align: center !important;
-    margin-bottom: 0.75rem;
-  }
-
-  .coach-detail-avatar {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .coach-detail-page .d-inline-flex.align-items-center.gap-1 {
-    margin-top: 4px;
-  }
-}
-
-/* 4) Dashboard header pills (Availability) centering on mobile */
-@media (max-width: 576px) {
-  .dashboard-header-pills {
-    justify-content: center !important;
-    text-align: center;
   }
 }
