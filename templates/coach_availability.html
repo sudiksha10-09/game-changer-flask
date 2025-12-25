@@ -1,75 +1,110 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="row justify-content-center my-5">
-    <div class="col-lg-8">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h2 fw-bold serif-font">Availability Manager</h1>
-                <p class="text-muted">Set your weekly recurring schedule.</p>
-            </div>
-            <a href="{{ url_for('coach_dashboard') }}" class="btn btn-outline-dark rounded-pill px-4">
-                <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
-            </a>
-        </div>
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-dark border-bottom p-4">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-week me-2 text-primary"></i> Weekly Schedule</h5>
-            </div>
-            <div class="card-body p-0">
-                <form action="{{ url_for('update_availability') }}" method="POST">
-                    
-                    <div class="list-group list-group-flush">
-                        {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-                        {% for day in days %}
-                        <div class="list-group-item p-4">
-                            <div class="row align-items-center">
-                                <div class="col-md-4">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="day_{{ day }}" name="day_{{ day }}_active" checked>
-                                        <label class="form-check-label fw-bold ms-2" for="day_{{ day }}">{{ day }}</label>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-8">
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-5">
-                                            <input type="time" class="form-control bg-dark border-0 rounded-3" name="day_{{ day }}_start" value="09:00">
-                                        </div>
-                                        <div class="col-2 text-center text-muted small">TO</div>
-                                        <div class="col-5">
-                                            <input type="time" class="form-control bg-dark border-0 rounded-3" name="day_{{ day }}_end" value="17:00">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+<div class="container my-5">
+  <h2 class="mb-1">Availability Manager</h2>
+  <p class="text-muted">Set your weekly availability (30-minute slots)</p>
 
-                    <div class="p-4 bg-dark border-top">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-uppercase">Block Specific Dates (Vacation)</label>
-                            <input type="text" name="blocked_dates" class="form-control border-0 shadow-sm rounded-3" placeholder="e.g. 2025-12-25, 2026-01-01">
-                            <div class="form-text small">Enter dates (YYYY-MM-DD) separated by commas.</div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-bold shadow-sm hover-lift">
-                            Save Schedule
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+  <form method="POST" action="{{ url_for('update_availability') }}">
+
+    {% set days = [
+      ('Monday',0),('Tuesday',1),('Wednesday',2),
+      ('Thursday',3),('Friday',4),('Saturday',5),('Sunday',6)
+    ] %}
+    <div class="mb-3">
+      <button type="button"
+              class="btn btn-sm btn-outline-secondary"
+              onclick="copyMondayToAll()">
+        Copy Monday to All Days
+      </button>
     </div>
-</div>
+    <div class="card shadow-sm rounded-4 overflow-hidden">
+      <div class="card-header bg-dark text-white">
+        Weekly Availability
+      </div>
 
-<style>
-    /* Slight opacity for disabled days (Optional JS enhancement can toggle this class) */
-    .day-disabled {
-        opacity: 0.5;
-        pointer-events: none;
+      <div class="list-group list-group-flush">
+        {% for day, idx in days %}
+        <div class="list-group-item py-4">
+          <div class="row align-items-center">
+
+            <!-- Day Toggle -->
+            <div class="col-md-3">
+              <label class="fw-bold">
+                <input type="checkbox"
+                       name="day_{{ day }}_active"
+                       {% if weekly.get(idx) %}checked{% endif %}>
+                {{ day }}
+              </label>
+            </div>
+
+            <!-- Start Time -->
+            <div class="col-md-3">
+              <input type="time"
+                     name="day_{{ day }}_start"
+                     class="form-control"
+                     value="{{ weekly[idx].start if weekly.get(idx) else '09:00' }}">
+            </div>
+
+            <!-- End Time -->
+            <div class="col-md-3">
+              <input type="time"
+                     name="day_{{ day }}_end"
+                     class="form-control"
+                     value="{{ weekly[idx].end if weekly.get(idx) else '17:00' }}">
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Blocked Dates -->
+      <div class="p-4 border-top bg-light">
+        <label class="fw-bold">Block Specific Dates</label>
+        <input type="text"
+               name="blocked_dates"
+               class="form-control"
+               placeholder="YYYY-MM-DD, YYYY-MM-DD">
+      </div>
+
+      <div class="p-4">
+        <button class="btn btn-primary w-100 rounded-pill py-2">
+          Save Availability
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>
+<script>
+function copyMondayToAll() {
+  // Get Monday values
+  const mondayStart = document.querySelector('[name="day_Monday_start"]').value;
+  const mondayEnd   = document.querySelector('[name="day_Monday_end"]').value;
+
+  if (!mondayStart || !mondayEnd) {
+    alert("Set Monday time first");
+    return;
+  }
+
+  const days = [
+    "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday"
+  ];
+
+  days.forEach(day => {
+    const activeCheckbox = document.querySelector(`[name="day_${day}_active"]`);
+    const startInput = document.querySelector(`[name="day_${day}_start"]`);
+    const endInput   = document.querySelector(`[name="day_${day}_end"]`);
+
+    // Only copy if day is enabled
+    if (activeCheckbox && activeCheckbox.checked) {
+      startInput.value = mondayStart;
+      endInput.value   = mondayEnd;
     }
-</style>
+  });
+}
+</script>
+
 {% endblock %}

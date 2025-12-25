@@ -38,7 +38,7 @@ from werkzeug.utils import secure_filename
 from slugify import slugify
 from dotenv import load_dotenv
 from markupsafe import escape
-
+from datetime import time
 load_dotenv()
 
 # ---------- STRIPE CONFIG & LOGGING ----------
@@ -61,6 +61,8 @@ if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 else:
     logger.warning("STRIPE_SECRET_KEY not set — Stripe disabled.")
+
+PAYMENT_LOCK_MINUTES = 5
 
 # ---------------------------------
 # PATHS
@@ -384,6 +386,21 @@ def validate_file_upload(file):
     
     return True, "Valid file"
 
+def get_weekday(date_obj):
+    # Monday = 0 ... Sunday = 6
+    return date_obj.weekday()
+
+
+def generate_time_slots(start_time, end_time, duration_minutes=30):
+    slots = []
+    current = datetime.combine(datetime.today(), start_time)
+    end = datetime.combine(datetime.today(), end_time)
+
+    while current + timedelta(minutes=duration_minutes) <= end:
+        slots.append(current.time().strftime("%H:%M"))
+        current += timedelta(minutes=duration_minutes)
+
+    return slots
 
 # ---------------------------------
 # MODELS
@@ -533,6 +550,8 @@ class Booking(db.Model):
     message = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default="Pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    payment_intent_id = db.Column(db.String(255), nullable=True)
 
 
 @login_manager.user_loader
@@ -560,6 +579,38 @@ def create_slug(name, sport_str):
         counter += 1
     return slug
 
+class CoachAvailability(db.Model):
+    __tablename__ = "coach_availability"
+
+    id = db.Column(db.Integer, primary_key=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey("coach.id"), nullable=False)
+
+    # 0 = Monday, 6 = Sunday
+    day_of_week = db.Column(db.Integer, nullable=False)
+
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+
+    slot_duration_minutes = db.Column(db.Integer, default=30)
+    max_sessions_per_day = db.Column(db.Integer, default=1)
+
+    is_active = db.Column(db.Boolean, default=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    coach = db.relationship("Coach", backref="weekly_availability")
+def release_expired_locks():
+    expired = Booking.query.filter(
+        Booking.status == "Payment Pending",
+        Booking.locked_until < datetime.utcnow()
+    ).all()
+
+    for b in expired:
+        b.status = "Cancelled"
+        b.locked_until = None
+
+    if expired:
+        db.session.commit()
 
 # ---------------------------------
 # ROUTES
@@ -1030,22 +1081,27 @@ def coaches():
 def coach_availability():
     coach = current_user.coach_profile
 
-    # Parse availability JSON -> dict
-    availability = {}
-    if coach and coach.availability_json:
-        try:
-            availability = json.loads(coach.availability_json)
-        except Exception:
-            availability = {}
+    weekly = {}
+    rows = CoachAvailability.query.filter_by(
+        coach_id=coach.id,
+        is_active=True
+    ).all()
 
-    # Example: availability = {"2025-12-25": {"blocked": true}, "2025-12-31": {"blocked": false}}
+    for r in rows:
+        weekly[r.day_of_week] = {
+            "start": r.start_time.strftime("%H:%M"),
+            "end": r.end_time.strftime("%H:%M"),
+        }
+
+    blocked = {}
+    if coach.availability_json:
+        blocked = json.loads(coach.availability_json)
 
     return render_template(
         "coach_availability.html",
-        coach=coach,
-        availability=availability,
+        weekly=weekly,
+        blocked=blocked,
     )
-
 
 @app.route("/coach/availability/update", methods=["POST"])
 @coach_required
@@ -1055,21 +1111,74 @@ def update_availability():
         flash("Create your coach profile first.", "danger")
         return redirect(url_for("coach_dashboard"))
 
-    # Expect frontend to send list of blocked dates as ISO strings
-    # e.g. <input type="hidden" name="blocked_dates" value="2025-12-24,2025-12-25">
+    # -------------------------------
+    # 1. SAVE WEEKLY AVAILABILITY
+    # -------------------------------
+    days_map = {
+        "Monday": 0,
+        "Tuesday": 1,
+        "Wednesday": 2,
+        "Thursday": 3,
+        "Friday": 4,
+        "Saturday": 5,
+        "Sunday": 6,
+    }
+
+    # Clear existing weekly availability
+    CoachAvailability.query.filter_by(coach_id=coach.id).delete()
+
+    for day_name, day_num in days_map.items():
+        active = request.form.get(f"day_{day_name}_active")
+        start = request.form.get(f"day_{day_name}_start")
+        end = request.form.get(f"day_{day_name}_end")
+
+        # ❗ THIS IS WHERE IT GOES
+        if not active or not start or not end:
+            continue
+
+        if start >= end:
+            continue
+
+        availability = CoachAvailability(
+            coach_id=coach.id,
+            day_of_week=day_num,
+            start_time=datetime.strptime(start, "%H:%M").time(),
+            end_time=datetime.strptime(end, "%H:%M").time(),
+            slot_duration_minutes=30,
+            is_active=True,
+        )
+        db.session.add(availability)
+
+    # -------------------------------
+    # 2. SAVE BLOCKED DATES
+    # -------------------------------
     blocked_str = (request.form.get("blocked_dates") or "").strip()
     blocked_dates = [d.strip() for d in blocked_str.split(",") if d.strip()]
 
-    # Build availability dict
-    availability = {}
+    availability_json = {}
     for d in blocked_dates:
-        availability[d] = {"blocked": True}
+        availability_json[d] = {"blocked": True}
 
-    coach.availability_json = json.dumps(availability)
+    coach.availability_json = json.dumps(availability_json)
+
+    db.session.commit()
+    flash("Availability schedule updated successfully!", "success")
+    return redirect(url_for("coach_availability"))
+
+
+@app.route("/coach/availability/delete/<int:availability_id>", methods=["POST"])
+@coach_required
+def delete_weekly_availability(availability_id):
+    availability = CoachAvailability.query.get_or_404(availability_id)
+
+    if availability.coach_id != current_user.coach_profile.id:
+        abort(403)
+
+    availability.is_active = False
     db.session.commit()
 
-    flash("Availability schedule updated successfully!", "success")
-    return redirect(url_for("coach_dashboard"))
+    flash("Availability removed.", "success")
+    return redirect(url_for("coach_availability"))
 
 @app.route("/coaches/<slug>")
 def coach_detail(slug):
@@ -1166,26 +1275,36 @@ def book_session(coach_id):
         coach_id=coach.id,
         booking_date=date_obj,
         booking_time=time_slot
-    ).filter(Booking.status.in_(["Confirmed", "Payment Pending"])).first()
+    ).filter(
+    (Booking.status == "Confirmed") |
+    (
+        (Booking.status == "Payment Pending") &
+        (Booking.locked_until > datetime.utcnow())
+    )
+).first()
+
 
     if existing_booking:
         flash("This time slot is already booked. Please choose another.", "danger")
         return redirect(url_for("coach_detail", slug=coach.slug))
 
     # Initial status based on price
+    lock_until = datetime.utcnow() + timedelta(minutes=PAYMENT_LOCK_MINUTES)
     initial_status = "Payment Pending"
+
     if price_per_session == 0:
         initial_status = "Confirmed"
 
     new_booking = Booking(
-        coach_id=coach.id,
-        user_id=current_user.id,
-        sport=sanitize_input(sport),
-        booking_date=date_obj,
-        booking_time=time_result,
-        message=sanitize_input(message, max_length=1000),
-        location=sanitize_input(location, max_length=255),
-        status=initial_status,
+    coach_id=coach.id,
+    user_id=current_user.id,
+    sport=sanitize_input(sport),
+    booking_date=date_obj,
+    booking_time=time_result,
+    message=sanitize_input(message, max_length=1000),
+    location=sanitize_input(location, max_length=255),
+    status=initial_status,
+    locked_until=lock_until
     )
 
     db.session.add(new_booking)
@@ -1857,15 +1976,16 @@ def stripe_webhook():
                         db.session.commit()
 
             # 2) Single coach booking (existing logic, keep as-is but name must match what you send in metadata)
-            elif metadata.get("type") == "coachbooking":  # or "coach_booking" – match your create-session code
-                booking_id = metadata.get("booking_id")
-                if booking_id:
-                    booking = Booking.query.get(booking_id)
-                    if booking:
-                        booking.status = "Confirmed"
-                        db.session.commit()
-                        logger.info(f"Booking {booking_id} confirmed via Stripe.")
-                        send_booking_confirmation_emails(booking)
+            elif metadata.get("type") == "coach_booking":
+             booking_id = metadata.get("booking_id")
+            if booking_id:
+                booking = Booking.query.get(booking_id)
+                if booking:
+                    booking.status = "Confirmed"
+                    booking.locked_until = None
+                    booking.payment_intent_id = session_obj.get("payment_intent")
+                    db.session.commit()
+                    send_booking_confirmation_emails(booking)
 
             # 3) New: multi-session plan purchase
             elif metadata.get("type") == "plan_purchase":
@@ -2144,6 +2264,79 @@ def chatbot():
         
         return jsonify({"response": response, "type": "general"})
 
+@app.route("/api/coach/<int:coach_id>/slots")
+def get_available_slots(coach_id):
+    date_str = request.args.get("date")
+    if not date_str:
+        return jsonify({"error": "Date is required"}), 400
+
+    valid, date_obj = validate_date(date_str)
+    if not valid:
+        return jsonify({"error": date_obj}), 400
+
+    coach = Coach.query.get_or_404(coach_id)
+
+    # ---------------- BLOCKED DATE CHECK ----------------
+    blocked = {}
+    if coach.availability_json:
+        try:
+            blocked = json.loads(coach.availability_json)
+        except Exception:
+            blocked = {}
+
+    date_key = date_obj.strftime("%Y-%m-%d")
+    if date_key in blocked and blocked[date_key].get("blocked"):
+        return jsonify({"slots": []})
+
+    # ---------------- WEEKDAY AVAILABILITY ----------------
+    weekday = get_weekday(date_obj)
+
+    availabilities = CoachAvailability.query.filter_by(
+        coach_id=coach.id,
+        day_of_week=weekday,
+        is_active=True
+    ).all()
+
+    # ---------------- DAILY BOOKING COUNT (FIXED) ----------------
+    daily_count = Booking.query.filter(
+        Booking.coach_id == coach.id,
+        Booking.booking_date == date_obj,
+        (
+            (Booking.status == "Confirmed") |
+            (
+                (Booking.status == "Payment Pending") &
+                (Booking.locked_until > datetime.utcnow())
+            )
+        )
+    ).count()   # ✅ THIS IS THE CRITICAL FIX
+
+    available_slots = []
+
+    # ---------------- SLOT GENERATION ----------------
+    for a in availabilities:
+
+        # Enforce max sessions per day
+        if daily_count >= a.max_sessions_per_day:
+            break
+
+        slots = generate_time_slots(
+            a.start_time,
+            a.end_time,
+            a.slot_duration_minutes
+        )
+
+        for s in slots:
+            existing = Booking.query.filter(
+                Booking.coach_id == coach.id,
+                Booking.booking_date == date_obj,
+                Booking.booking_time == s,
+                Booking.status.in_(["Confirmed", "Payment Pending"])
+            ).first()
+
+            if not existing:
+                available_slots.append(s)
+
+    return jsonify({"slots": available_slots})
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
