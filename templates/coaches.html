@@ -7,11 +7,14 @@
   <!-- HERO + FILTERS WRAPPER -->
   <div class="coaches-hero card border-0 rounded-4 mb-4 p-3 p-md-4">
     <div class="row g-4 align-items-start">
-      <!-- LEFT: TITLE + TIP / ACTIVE FILTERS -->
+      <!-- LEFT: TITLE + ACTIVE FILTERS -->
       <div class="col-lg-4">
+        <div class="hero-nav-pill mb-3">
+          <span class="badge-supermi">PRO‑LEVEL COACH DIRECTORY</span>
+        </div>
         <h1 class="h3 serif-font mb-2">Find your GameChanger Coach</h1>
         <p class="text-muted small mb-3">
-          Filter by sport, city and budget to match with verified coaches.
+          Match with verified coaches by sport, city, and budget – just like the featured coaches on the home page.
         </p>
 
         <div>
@@ -41,7 +44,7 @@
             </div>
             <a href="{{ url_for('coaches') }}" class="small text-decoration-none">Clear filters</a>
           {% else %}
-            <small class="text-muted">Tip: Try "Cricket, Mumbai, under ₹1000"</small>
+            <small class="text-muted">Tip: Try “Cricket, Mumbai, under ₹1000”.</small>
           {% endif %}
         </div>
       </div>
@@ -61,26 +64,29 @@
 
           <div class="col-md-4">
             <label class="form-label small text-muted">City</label>
-            <input type="text"
-                   name="city"
-                   class="form-control form-control-sm"
-                   placeholder="e.g. Mumbai"
-                   value="{{ city_filter or '' }}">
+            <input
+              type="text"
+              name="city"
+              class="form-control form-control-sm"
+              placeholder="e.g. Mumbai"
+              value="{{ city_filter or '' }}">
           </div>
 
           <div class="col-md-4">
             <label class="form-label small text-muted">Budget / session (₹)</label>
             <div class="d-flex gap-2">
-              <input type="number"
-                     name="price_min"
-                     class="form-control form-control-sm"
-                     placeholder="Min"
-                     value="{{ price_min if price_min is not none else '' }}">
-              <input type="number"
-                     name="price_max"
-                     class="form-control form-control-sm"
-                     placeholder="Max"
-                     value="{{ price_max if price_max is not none else '' }}">
+              <input
+                type="number"
+                name="price_min"
+                class="form-control form-control-sm"
+                placeholder="Min"
+                value="{{ price_min if price_min is not none else '' }}">
+              <input
+                type="number"
+                name="price_max"
+                class="form-control form-control-sm"
+                placeholder="Max"
+                value="{{ price_max if price_max is not none else '' }}">
             </div>
           </div>
 
@@ -94,104 +100,124 @@
       </div>
     </div>
   </div>
-  <!-- COACH CARDS GRID -->
-  <div class="row g-4 mb-5">
-    {% if coaches %}
-      {% for coach in coaches %}
-        <div class="col-md-4">
-          {# WRAP ENTIRE CARD IN LINK #}
-          <a href="{{ url_for('coach_detail', slug=coach.slug) }}"
-             class="coach-card-link text-decoration-none">
 
-            <div class="card h-100 border-0 rounded-4 hover-lift coach-card">
-
-              <!-- TOP ROW: avatar + rating -->
-              <div class="d-flex justify-content-between align-items-start px-4 pt-4">
-                <div class="d-flex align-items-center gap-3">
-                  {% if coach.profile_image %}
-                    <div class="coach-avatar-shell-circle">
-                      <img
-                        src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}"
-                        alt="{{ coach.name }}"
-                        class="coach-avatar-img"
-                        onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
-                      <div class="coach-avatar-initial-circle d-none">
-                        <span>{{ coach.name[0].upper() }}</span>
-                      </div>
-                    </div>
-                  {% else %}
-                    <div class="coach-avatar-shell-circle">
-                      <div class="coach-avatar-initial-circle">
-                        <span>{{ coach.name[0].upper() }}</span>
-                      </div>
-                    </div>
-                  {% endif %}
-                  <div class="small text-muted">
-                    {{ coach.city or '' }}
-                  </div>
-                </div>
-
-                {% if coach.rating > 0 %}
-                  <span class="small fw-semibold px-3 py-1 rounded-pill"
-                        style="background: rgba(15,23,42,0.95); color: #FACC15;">
-                    ★ {{ coach.rating }}
-                  </span>
-                {% endif %}
-              </div>
-
-              <!-- BODY -->
-              <div class="card-body p-4 pt-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span class="coach-card-sport">
-                    {{ coach.sport.split(',')[0] }}
-                  </span>
-                  {% if coach.is_verified %}
-                    <i class="bi bi-patch-check-fill text-primary" title="Verified"></i>
-                  {% endif %}
-                </div>
-
-                <h4 class="card-title coach-card-title mb-1 fw-bold">
-                  {{ coach.name }}
-                </h4>
-                <p class="text-muted small mb-3 text-truncate">
-                  {{ coach.tagline }}
-                </p>
-
-                <hr class="opacity-10">
-
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="fw-bold coach-card-price">
-                    ₹{{ coach.price_per_session }}
-                    <span>/ session</span>
-                  </span>
-
-                  {# ARROW LOOKS LIKE A BUTTON BUT NO NESTED <a> #}
-                  <div class="coach-card-arrow btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
-                       style="width: 40px; height: 40px;">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </a>
-        </div>
-      {% endfor %}
-    {% else %}
-      <div class="col-12">
-        <div class="text-center py-5">
-          <i class="bi bi-search fs-1 text-muted opacity-25 mb-3"></i>
-          <p class="text-muted mb-2">No coaches match your filters right now.</p>
-          <p class="small text-muted mb-3">
-            Try removing one or more filters, or searching another city/sport.
-          </p>
-          <a href="{{ url_for('coaches') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">
-            Reset filters
-          </a>
-        </div>
+  <!-- COACHES GRID -->
+  <section class="my-4">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <div>
+        <span class="badge bg-dark bg-opacity-10 text-dark rounded-pill mb-2">Coaches</span>
+        <h2 class="fw-bold mb-0">Browse all coaches</h2>
+        <p class="text-muted small mt-1 mb-0">
+          Cards mirror the Featured Coaches strip styling from home, with gradient avatars and soft shadows.
+        </p>
       </div>
-    {% endif %}
-  </div>
+      {% if coaches %}
+        <span class="small text-muted">{{ pagination.total }} coaches found</span>
+      {% endif %}
+    </div>
+
+    <div class="row g-4 mb-5">
+      {% if coaches %}
+        {% for coach in coaches %}
+          <div class="col-md-4">
+            <a href="{{ url_for('coach_detail', slug=coach.slug) }}"
+               class="coach-card-link text-decoration-none">
+
+              <div class="card h-100 coach-card hover-lift shadow-lg coach-highlight-card">
+
+                <!-- TOP ROW: avatar + badge -->
+                <div class="d-flex align-items-center justify-content-between px-4 pt-4">
+                  <div class="coach-avatar-row d-flex align-items-center gap-3">
+                    {% set has_image = coach.profile_image and coach.profile_image|length > 0 %}
+                    {% if has_image %}
+                      <div class="coach-avatar-shell-circle">
+                        <img
+                          src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}"
+                          alt="{{ coach.name }} - Coach"
+                          class="coach-avatar-img"
+                          onerror="this.style.display='none'; this.closest('.coach-avatar-shell-circle').querySelector('.coach-avatar-initial-circle').classList.remove('d-none');">
+                        <div class="coach-avatar-initial-circle d-none">
+                          <span>{{ coach.name[0].upper() }}</span>
+                        </div>
+                      </div>
+                    {% else %}
+                      <div class="coach-avatar-shell-circle">
+                        <div class="coach-avatar-initial-circle">
+                          <span>{{ coach.name[0].upper() }}</span>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    <div class="small text-muted">
+                      {{ coach.city or '' }}
+                    </div>
+                  </div>
+
+                  {% if coach.badge_label %}
+                    <span class="coach-highlight-badge">{{ coach.badge_label }}</span>
+                  {% elif coach.is_verified %}
+                    <span class="coach-highlight-badge">Verified Coach</span>
+                  {% endif %}
+                </div>
+
+                <!-- BODY -->
+                <div class="p-4 pt-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="coach-highlight-sport">
+                      {{ coach.sport.split(',')[0] }}
+                    </span>
+                    {% if coach.rating and coach.rating > 0 %}
+                      <span class="small fw-semibold px-3 py-1 rounded-pill"
+                            style="background: rgba(15,23,42,0.95); color:#FACC15;">
+                        ★ {{ coach.rating }}
+                      </span>
+                    {% endif %}
+                  </div>
+
+                  <h4 class="fw-bold mt-1 mb-1 coach-card-title">
+                    {{ coach.name }}
+                  </h4>
+                  <p class="text-muted small mb-3 text-truncate">
+                    {{ coach.tagline or 'Structured coaching tailored to your goals.' }}
+                  </p>
+
+                  <hr class="opacity-10">
+
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="coach-highlight-price">
+                        ₹{{ coach.price_per_session }}
+                      </strong>
+                      <span class="text-muted small"> / session</span>
+                    </div>
+
+                    <!-- visually button‑like arrow; click handled by outer link -->
+                    <div class="coach-card-arrow btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                      <i class="bi bi-arrow-right"></i>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12">
+          <div class="text-center py-5">
+            <i class="bi bi-search fs-1 text-muted opacity-25 mb-3"></i>
+            <p class="text-muted mb-2">No coaches match your filters right now.</p>
+            <p class="small text-muted mb-3">
+              Try removing one or more filters, or searching another city or sport.
+            </p>
+            <a href="{{ url_for('coaches') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">
+              Reset filters
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
 
   <!-- PAGINATION -->
   {% if pagination.pages > 1 %}
@@ -230,6 +256,7 @@
       </nav>
     </div>
   {% endif %}
+
 </div>
 
 {% endblock %}

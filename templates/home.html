@@ -1,16 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- ================= HERO SECTION ================= -->
 <section class="hero-section-supermi">
   <div class="hero-gradient-bg">
     <div class="container">
-
       <div class="row align-items-center gy-4">
+
         <!-- LEFT: Text -->
         <div class="col-lg-6">
           <div class="hero-nav-pill mb-3">
-            <span class="badge-supermi">PRO‑LEVEL SPORTS COACHING</span>
+            <span class="badge-supermi">PRO-LEVEL SPORTS COACHING</span>
           </div>
 
           <h1 class="hero-headline-supermi mb-4">
@@ -19,20 +18,24 @@
           </h1>
 
           <p class="hero-subheadline mb-4">
-            Match with verified coaches, track your progress, and level up your
-            game with data‑driven training.
+            Match with verified coaches, track your progress, and level up your game with data-driven training.
           </p>
 
-          <div class="d-flex flex-wrap gap-3 mb-4">
-            <a href="{{ url_for('coaches') }}" class="btn-supermi-primary">
-              Find a Coach
-            </a>
-            <a href="#how-it-works" class="btn-supermi-ghost">
-              See How It Works
-            </a>
+          <div class="d-flex flex-column">
+            <div class="d-flex flex-wrap gap-3 mb-2">
+              <a href="{{ url_for('coaches') }}" class="btn-supermi-primary">
+                Find a Coach
+              </a>
+              <a href="#how-it-works" class="btn-supermi-ghost">
+                See How It Works
+              </a>
+            </div>
+            <small class="text-muted hero-cta-subcopy">
+              No commitment. Browse coaches first.
+            </small>
           </div>
 
-          <div class="hero-stats-bar">
+          <div class="hero-stats-bar mt-4">
             <div class="hero-stat">
               <div class="hero-stat-number">50+</div>
               <div class="hero-stat-label">Verified Coaches</div>
@@ -48,62 +51,25 @@
           </div>
         </div>
 
-        <!-- RIGHT: Dashboard‑style visual -->
+        <!-- RIGHT: Orb visuals -->
         <div class="col-lg-6">
-          <div class="hero-dashboard-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <span class="hero-chip-live">LIVE PERFORMANCE</span>
-                <h3 class="hero-dashboard-title mt-2 mb-0">Weekly Training Load</h3>
-              </div>
-              <span class="hero-dashboard-value">+18%</span>
-            </div>
+          <div class="hero-orb-shell" id="heroOrb">
+            <div class="hero-orb-glow"></div>
+            <div class="hero-orb-base-shadow"></div>
 
-            <div class="hero-bars mb-4">
-              <div class="hero-bar">
-                <span class="hero-bar-label">Speed</span>
-                <div class="hero-bar-track">
-                  <div class="hero-bar-fill w-75"></div>
-                </div>
-                <span class="hero-bar-value">7.5</span>
-              </div>
-              <div class="hero-bar">
-                <span class="hero-bar-label">Endurance</span>
-                <div class="hero-bar-track">
-                  <div class="hero-bar-fill w-90"></div>
-                </div>
-                <span class="hero-bar-value">9.1</span>
-              </div>
-              <div class="hero-bar">
-                <span class="hero-bar-label">Game IQ</span>
-                <div class="hero-bar-track">
-                  <div class="hero-bar-fill w-60"></div>
-                </div>
-                <span class="hero-bar-value">6.0</span>
-              </div>
-            </div>
+            <!-- MAIN BIG ORB -->
+            <img src="{{ url_for('static', filename='images/hero-orb.png') }}"
+                 alt="Training performance visual"
+                 class="hero-orb-img">
 
-            <div class="d-flex flex-wrap gap-2">
-              <div class="hero-coach-chip">
-                <div class="hero-coach-avatar">AK</div>
-                <div>
-                  <div class="hero-coach-name">Akash Verma</div>
-                  <div class="hero-coach-meta">Cricket · Elite Coach</div>
-                </div>
-              </div>
-              <div class="hero-coach-chip">
-                <div class="hero-coach-avatar">SN</div>
-                <div>
-                  <div class="hero-coach-name">Sneha Nair</div>
-                  <div class="hero-coach-meta">Badminton · Premium</div>
-                </div>
-              </div>
-            </div>
-
+            <!-- SMALL SECOND ORB -->
+            <img src="{{ url_for('static', filename='images/hero-orb.png') }}"
+                 alt="Training performance visual"
+                 class="hero-orb-img hero-orb-img-small">
           </div>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 </section>
