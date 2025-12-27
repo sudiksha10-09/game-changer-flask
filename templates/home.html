@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="hero-section-supermi">
+<!-- ================= HERO ================= -->
+<section class="hero-section-supermi gc-wave-divider">
   <div class="hero-gradient-bg">
     <div class="container">
       <div class="row align-items-center gy-4">
 
-        <!-- LEFT: Text -->
         <div class="col-lg-6">
           <div class="hero-nav-pill mb-3">
             <span class="badge-supermi">PRO-LEVEL SPORTS COACHING</span>
@@ -17,16 +17,16 @@
             <span class="hero-gradient-text">Win More Games.</span>
           </h1>
 
-          <p class="hero-subheadline mb-4">
+          <p class="hero-subheadline mb-4 opacity-75">
             Match with verified coaches, track your progress, and level up your game with data-driven training.
           </p>
 
           <div class="d-flex flex-column">
             <div class="d-flex flex-wrap gap-3 mb-2">
-              <a href="{{ url_for('coaches') }}" class="btn-supermi-primary">
+              <a href="{{ url_for('coaches') }}" class="gc-btn-primary">
                 Find a Coach
               </a>
-              <a href="#how-it-works" class="btn-supermi-ghost">
+              <a href="#how-it-works" class="gc-btn-outline">
                 See How It Works
               </a>
             </div>
@@ -51,21 +51,18 @@
           </div>
         </div>
 
-        <!-- RIGHT: Orb visuals -->
         <div class="col-lg-6">
-          <div class="hero-orb-shell" id="heroOrb">
+          <div class="hero-orb-shell">
             <div class="hero-orb-glow"></div>
             <div class="hero-orb-base-shadow"></div>
 
-            <!-- MAIN BIG ORB -->
             <img src="{{ url_for('static', filename='images/hero-orb.png') }}"
-                 alt="Training performance visual"
-                 class="hero-orb-img">
+                 class="hero-orb-img"
+                 alt="Training visual">
 
-            <!-- SMALL SECOND ORB -->
             <img src="{{ url_for('static', filename='images/hero-orb.png') }}"
-                 alt="Training performance visual"
-                 class="hero-orb-img hero-orb-img-small">
+                 class="hero-orb-img hero-orb-img-small"
+                 alt="Training visual">
           </div>
         </div>
 
@@ -75,343 +72,99 @@
 </section>
 
 <!-- ================= HOW IT WORKS ================= -->
-<section id="how-it-works" class="py-5">
+<section id="how-it-works" class="gc-section gc-section-soft gc-section-divider gc-section-overlap">
   <div class="container">
+
     <div class="text-center mb-5">
       <span class="badge bg-dark bg-opacity-10 text-dark px-3 py-2 rounded-pill mb-3">
         Simple Process
       </span>
-      <h2 class="display-5 fw-bold mb-3">How It Works</h2>
+      <h2 class="fw-bold mb-3">How It Works</h2>
       <p class="text-muted lead mx-auto" style="max-width: 600px;">
-        Go from search to game‑ready in three steps.
+        Go from search to game-ready in three steps.
       </p>
     </div>
 
     <div class="row g-4">
+      {% for step in [
+        ('01','bi-search','Discover Your Coach','Filter by sport, city, budget and rating.'),
+        ('02','bi-calendar-check','Choose Your Plan','Pick sessions that fit your season.'),
+        ('03','bi-trophy','Train & Win','Turn sessions into results.')
+      ] %}
       <div class="col-md-4">
-        <div class="modern-card p-5 rounded-5 shadow-lg h-100 hover-lift position-relative overflow-hidden">
-          <div class="step-pill">STEP 01</div>
-          <div class="position-relative z-2">
-            <div class="icon-shell mb-4">
-              <i class="bi bi-search fs-3"></i>
-            </div>
-            <h4 class="fw-bold mb-3">Discover Your Coach</h4>
-            <p class="text-muted">
-              Filter by sport, city, budget and rating to find the perfect match.
-            </p>
+        <div class="modern-card gc-card h-100 position-relative">
+          <div class="step-pill">STEP {{ step[0] }}</div>
+          <div class="icon-shell mb-4">
+            <i class="bi {{ step[1] }} fs-3"></i>
           </div>
+          <h4 class="fw-bold mb-3">{{ step[2] }}</h4>
+          <p class="text-muted">{{ step[3] }}</p>
         </div>
       </div>
-
-      <div class="col-md-4">
-        <div class="modern-card p-5 rounded-5 shadow-lg h-100 hover-lift position-relative overflow-hidden">
-          <div class="step-pill">STEP 02</div>
-          <div class="position-relative z-2">
-            <div class="icon-shell mb-4">
-              <i class="bi bi-calendar-check fs-3"></i>
-            </div>
-            <h4 class="fw-bold mb-3">Choose Your Plan</h4>
-            <p class="text-muted">
-              Pick the duration and sessions that fit your season and schedule.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="modern-card p-5 rounded-5 shadow-lg h-100 hover-lift position-relative overflow-hidden">
-          <div class="step-pill">STEP 03</div>
-          <div class="position-relative z-2">
-            <div class="icon-shell mb-4">
-              <i class="bi bi-trophy fs-3"></i>
-            </div>
-            <h4 class="fw-bold mb-3">Train & Win</h4>
-            <p class="text-muted">
-              Track progress with your coach and turn sessions into results.
-            </p>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
+
   </div>
 </section>
 
-<!-- ================= STATS / FEATURE ================= -->
-<section class="my-5">
+<!-- ================= FEATURE ================= -->
+<section class="gc-section">
   <div class="container">
-    <div class="feature-card card border-0 rounded-5 overflow-hidden">
+    <div class="feature-card card gc-card border-0 overflow-hidden">
       <div class="row g-0 align-items-stretch">
+
         <div class="col-lg-6 p-5 d-flex flex-column justify-content-center gap-4">
-          <div>
-            <span class="badge feature-pill mb-3">
-              Performance Snapshot
-            </span>
-            <h2 class="fw-bold mb-3">Built for serious players and teams.</h2>
-            <p class="lead mb-0 text-muted">
-              Centralize coaching, remove guesswork, and give your training the
-              same structure as elite programs.
-            </p>
-          </div>
-
-          <div class="d-flex flex-wrap gap-3">
-            <div class="feature-stat-card">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="feature-stat-label">Season adherence</span>
-                <span class="feature-stat-tag">Live</span>
-              </div>
-              <h3 class="feature-stat-value mb-1">92%</h3>
-              <div class="progress feature-progress">
-                <div class="progress-bar" style="width: 92%;"></div>
-              </div>
-            </div>
-
-            <div class="d-flex flex-column justify-content-between">
-              <div class="feature-mini-stat">
-                <span class="feature-mini-label">Avg. sessions / week</span>
-                <span class="feature-mini-value">3.4</span>
-              </div>
-              <div class="feature-mini-stat">
-                <span class="feature-mini-label">Sports covered</span>
-                <span class="feature-mini-value">15+</span>
-              </div>
-            </div>
-          </div>
+          <span class="badge feature-pill">Performance Snapshot</span>
+          <h2 class="fw-bold">Built for serious players and teams.</h2>
+          <p class="lead text-muted">
+            Centralize coaching, remove guesswork, and train like elite programs.
+          </p>
         </div>
 
         <div class="col-lg-6 feature-image-col">
           <img src="{{ url_for('static', filename='images/feature.jpg') }}"
-               class="w-100 h-100 object-fit-cover feature-image"
-               alt="Training Session">
+               class="w-100 h-100 object-fit-cover"
+               alt="Training session">
         </div>
+
       </div>
     </div>
   </div>
 </section>
-<!-- ================= TESTIMONIAL WAVE ================= -->
-<section class="my-5 py-5">
+
+<!-- ================= TESTIMONIALS ================= -->
+<section class="gc-section gc-section-soft gc-section-divider">
   <div class="container">
-    <div class="gc-twave-shell card border-0 rounded-5">
-      <div class="gc-twave-inner p-4 p-md-5">
-        <div class="text-center mb-4 mb-md-5">
-          <span class="badge bg-dark bg-opacity-10 text-dark rounded-pill mb-2">
-            Testimonials
-          </span>
-          <h2 class="fw-bold display-6 mb-2">What Our Athletes Say</h2>
-          <p class="text-muted mb-3">
-            Real stories from real players. See how structured coaching changed their game.
-          </p>
-          <a href="{{ url_for('coaches') }}" class="btn btn-primary rounded-pill px-4">
-            Book a Coach
-          </a>
-        </div>
-
-        {% set t_items = [
-          {
-            "id": 1,
-            "name": "Arjun Mehta",
-            "sport": "Cricket – Fast Bowler",
-            "quote": "The sessions focused on rhythm, run‑up and strength. I added real pace without losing control.",
-            "image": "arjun.jpg"
-          },
-          {
-            "id": 2,
-            "name": "Sara Nair",
-            "sport": "Badminton – Singles",
-            "quote": "We worked on movement patterns and rally tolerance. I feel fresher in the third game than I did in the first.",
-            "image": "sara.jpg"
-          },
-          {
-            "id": 3,
-            "name": "Kabir Rao",
-            "sport": "Football – Midfielder",
-            "quote": "The coach broke my game into simple cues. Now I scan better and stay involved for 90 minutes.",
-            "image": "kabir.jpg"
-          },
-          {
-            "id": 4,
-            "name": "Rising Stars Academy",
-            "sport": "Multi‑sport Training",
-            "quote": "Our entire batch followed structured plans, match reviews, and fitness blocks. The consistency helped the squad play with more confidence every weekend.",
-            "image": "group.jpg"
-          },
-          {
-            "id": 5,
-            "name": "Yash Patel",
-            "sport": "Basketball – Guard",
-            "quote": "Skill work plus conditioning meant I could push the pace without gassing out in the 4th quarter.",
-            "image": "yash.jpg"
-          }
-        ] %}
-
-        {# ========== DESKTOP / TABLET WAVE LAYOUT (md and up) ========== #}
-        <div class="d-none d-md-block">
-          <div class="gc-twave-track position-relative mb-4">
-            <svg class="gc-twave-line" viewBox="0 0 1000 160" preserveAspectRatio="none">
-              <path d="M0,120 C150,40 350,200 500,120 C650,40 850,200 1000,120"
-                    fill="none" stroke="#E5E7EB" stroke-width="2"
-                    stroke-dasharray="4 4" />
-            </svg>
-
-            <div class="gc-twave-avatars d-flex justify-content-between align-items-center">
-              {% for t in t_items %}
-              <button
-                type="button"
-                class="gc-twave-avatar-btn {% if loop.index0 == 2 %}active{% endif %}"
-                data-index="{{ loop.index0 }}"
-                data-name="{{ t.name }}"
-                data-sport="{{ t.sport }}"
-                data-quote="{{ t.quote }}"
-                data-image="{{ t.image }}"
-              >
-                <div class="gc-twave-avatar-ring">
-                  <img
-                    src="{{ url_for('static', filename='images/testimonials/' ~ t.image) }}"
-                    alt="{{ t.name }}"
-                    class="gc-twave-avatar-img">
-                </div>
-              </button>
-              {% endfor %}
-            </div>
-          </div>
-
-          <div class="gc-twave-quote text-center mx-auto">
-            {% set t = t_items[2] %}
-            <p class="lead mb-3">“{{ t.quote }}”</p>
-            <div class="fw-semibold">{{ t.name }}</div>
-            <div class="small text-muted">{{ t.sport }}</div>
-          </div>
-
-          <div class="d-flex justify-content-center gap-3 mt-4">
-            <button type="button"
-                    class="btn btn-outline-secondary btn-sm rounded-circle gc-twave-nav"
-                    id="gc-twave-prev">
-              <i class="bi bi-chevron-left"></i>
-            </button>
-            <button type="button"
-                    class="btn btn-outline-secondary btn-sm rounded-circle gc-twave-nav"
-                    id="gc-twave-next">
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        {# ========== MOBILE STACKED CARD LAYOUT (below md) ========== #}
-        <div class="d-block d-md-none">
-          {% set t = t_items[2] %}
-          <div class="gc-twave-mobile-card border rounded-4 p-3">
-            <div class="d-flex align-items-center mb-3">
-              <div class="gc-twave-mobile-avatar me-3">
-                <img
-                  src="{{ url_for('static', filename='images/testimonials/' ~ t.image) }}"
-                  alt="{{ t.name }}"
-                  class="gc-twave-mobile-img">
-              </div>
-              <div>
-                <div class="fw-semibold small gc-twave-mobile-name">{{ t.name }}</div>
-                <div class="small text-muted gc-twave-mobile-sport">{{ t.sport }}</div>
-              </div>
-            </div>
-            <p class="small mb-3 gc-twave-mobile-quote">“{{ t.quote }}”</p>
-            <div class="d-flex justify-content-between align-items-center">
-              <button type="button"
-                      class="btn btn-outline-secondary btn-sm rounded-circle gc-twave-nav"
-                      id="gc-twave-prev-m">
-                <i class="bi bi-chevron-left"></i>
-              </button>
-              <small class="text-muted">Swipe stories</small>
-              <button type="button"
-                      class="btn btn-outline-secondary btn-sm rounded-circle gc-twave-nav"
-                      id="gc-twave-next-m">
-                <i class="bi bi-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
+    <div class="gc-twave-shell card gc-card border-0">
+      <div class="gc-twave-inner p-5 text-center">
+        <span class="badge bg-dark bg-opacity-10 rounded-pill mb-3">Testimonials</span>
+        <h2 class="fw-bold mb-3">What Our Athletes Say</h2>
+        <p class="text-muted mb-4">
+          Real stories from competitive players.
+        </p>
+        <a href="{{ url_for('coaches') }}" class="gc-btn-primary">
+          Book a Coach
+        </a>
       </div>
     </div>
   </div>
 </section>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const avatarButtons = Array.from(document.querySelectorAll(".gc-twave-avatar-btn"));
-    const quoteBox = document.querySelector(".gc-twave-quote");
-    const mobileCard = document.querySelector(".gc-twave-mobile-card");
-
-    const prevBtn = document.getElementById("gc-twave-prev");
-    const nextBtn = document.getElementById("gc-twave-next");
-    const prevBtnM = document.getElementById("gc-twave-prev-m");
-    const nextBtnM = document.getElementById("gc-twave-next-m");
-
-    if (!avatarButtons.length) return;
-
-    function renderFromButton(btn) {
-      const name = btn.dataset.name;
-      const sport = btn.dataset.sport;
-      const quote = btn.dataset.quote;
-      const image = btn.dataset.image;
-
-      avatarButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      // Desktop quote
-      if (quoteBox) {
-        quoteBox.innerHTML = `
-          <p class="lead mb-3">“${quote}”</p>
-          <div class="fw-semibold">${name}</div>
-          <div class="small text-muted">${sport}</div>
-        `;
-      }
-
-      // Mobile card
-      if (mobileCard) {
-        const img = mobileCard.querySelector(".gc-twave-mobile-img");
-        const nameEl = mobileCard.querySelector(".gc-twave-mobile-name");
-        const sportEl = mobileCard.querySelector(".gc-twave-mobile-sport");
-        const quoteEl = mobileCard.querySelector(".gc-twave-mobile-quote");
-
-        if (img) {
-          img.src = "{{ url_for('static', filename='images/testimonials/') }}" + image;
-          img.alt = name;
-        }
-        if (nameEl) nameEl.textContent = name;
-        if (sportEl) sportEl.textContent = sport;
-        if (quoteEl) quoteEl.textContent = "“" + quote + "”";
-      }
-    }
-
-    avatarButtons.forEach(btn => {
-      btn.addEventListener("click", () => renderFromButton(btn));
-    });
-
-    function move(delta) {
-      const currentIndex = avatarButtons.findIndex(b => b.classList.contains("active"));
-      const nextIndex = (currentIndex + delta + avatarButtons.length) % avatarButtons.length;
-      renderFromButton(avatarButtons[nextIndex]);
-      avatarButtons[nextIndex].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    }
-
-    if (prevBtn) prevBtn.addEventListener("click", () => move(-1));
-    if (nextBtn) nextBtn.addEventListener("click", () => move(1));
-    if (prevBtnM) prevBtnM.addEventListener("click", () => move(-1));
-    if (nextBtnM) nextBtnM.addEventListener("click", () => move(1));
-  });
-</script>
 
 <!-- ================= FEATURED COACHES ================= -->
-<section class="my-5">
+<section class="gc-section">
   <div class="container">
+
     <div class="d-flex justify-content-between align-items-end mb-5">
       <div>
-        <span class="badge bg-dark bg-opacity-10 text-dark rounded-pill mb-2">
+        <span class="badge bg-dark bg-opacity-10 rounded-pill mb-2">
           Top Rated
         </span>
-        <h2 class="fw-bold display-6 mb-0">Featured Coaches</h2>
-        <p class="text-muted mt-2">Handpicked coaches trusted by competitive athletes</p>
+        <h2 class="fw-bold mb-0">Featured Coaches</h2>
+        <p class="text-muted mt-2">Trusted by competitive athletes</p>
       </div>
-      <a href="{{ url_for('coaches') }}" class="btn btn-outline-dark rounded-pill">
-        View All <i class="bi bi-arrow-right ms-2"></i>
+
+      <a href="{{ url_for('coaches') }}" class="gc-btn-outline">
+        View All
       </a>
     </div>
 
@@ -421,77 +174,19 @@
       <div class="col-md-4">
         <a href="{{ url_for('coach_detail', slug=coach.slug) }}"
            class="coach-card-link text-decoration-none">
-
-          <div class="shadow-lg h-100 coach-highlight-card hover-lift">
-
-            <!-- TOP ROW: small avatar + badge -->
-            <div class="d-flex align-items-center justify-content-between px-4 pt-4">
-              <div class="coach-avatar-row d-flex align-items-center gap-3">
-                {% if coach.profile_image %}
-                  <div class="coach-avatar-shell-circle">
-                    <img
-                      src="{{ url_for('static', filename='uploads/' + coach.profile_image) }}"
-                      alt="{{ coach.name }} - Coach"
-                      class="coach-avatar-img"
-                      onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
-                    <div class="coach-avatar-initial-circle d-none">
-                      <span>{{ coach.name[0].upper() }}</span>
-                    </div>
-                  </div>
-                {% else %}
-                  <div class="coach-avatar-shell-circle">
-                    <div class="coach-avatar-initial-circle">
-                      <span>{{ coach.name[0].upper() }}</span>
-                    </div>
-                  </div>
-                {% endif %}
-                <div class="small text-muted">
-                  {{ coach.city or '' }}
-                </div>
-              </div>
-
-              {% if coach.badge_label %}
-                <span class="coach-highlight-badge">
-                  {{ coach.badge_label }}
-                </span>
-              {% elif coach.is_verified %}
-                <span class="coach-highlight-badge">
-                  Verified Coach
-                </span>
-              {% endif %}
-            </div>
-
-            <!-- BODY -->
-            <div class="p-4 pt-3">
-              <span class="coach-highlight-sport">
-                {{ coach.sport.split(',')[0] }}
-              </span>
-              <h4 class="fw-bold mt-2 mb-1">{{ coach.name }}</h4>
-              <p class="text-muted small mb-3">
-                {{ coach.tagline or "Structured coaching tailored to your goals." }}
-              </p>
-
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <strong class="coach-highlight-price">₹{{ coach.price_per_session }}</strong>
-                  <span class="text-muted small">/ session</span>
-                </div>
-
-                <div class="coach-card-arrow btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
-                     style="width: 40px; height: 40px;">
-                  <i class="bi bi-arrow-right"></i>
-                </div>
-              </div>
-            </div>
-
+          <div class="coach-highlight-card gc-card h-100">
+            <h4 class="fw-bold mb-1">{{ coach.name }}</h4>
+            <p class="text-muted small mb-3">{{ coach.tagline }}</p>
+            <strong class="coach-highlight-price">
+              ₹{{ coach.price_per_session }} / session
+            </strong>
           </div>
         </a>
       </div>
       {% endfor %}
     </div>
-    {% else %}
-    <p class="text-center text-muted">No coaches available right now.</p>
     {% endif %}
+
   </div>
 </section>
 

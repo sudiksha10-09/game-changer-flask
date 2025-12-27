@@ -41,6 +41,50 @@
 }
 
 /* ================= GLOBAL – LIGHT ================= */
+/* ================= GLOBAL SECTION SYSTEM ================= */
+
+.gc-section {
+  padding: 96px 0;
+}
+
+.gc-section-tight {
+  padding: 64px 0;
+}
+
+.gc-section-soft {
+  background: #F9FAFB;
+}
+
+.gc-section-divider {
+  position: relative;
+}
+
+.gc-section-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(15, 23, 42, 0.12),
+    transparent
+  );
+}
+
+/* Mobile spacing */
+@media (max-width: 768px) {
+  .gc-section {
+    padding: 72px 0;
+  }
+
+  .gc-section-tight {
+    padding: 48px 0;
+  }
+}
 
 html { scroll-behavior: smooth; }
 
@@ -1580,4 +1624,264 @@ footer small {
   .gc-twave-inner {
     padding: 18px 16px 20px;
   }
+}
+/* ================= CARD SYSTEM UNIFICATION ================= */
+
+/* MASTER CARD DNA */
+.gc-card {
+  background: #FFFFFF;
+  border-radius: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.10);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gc-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 32px 90px rgba(15, 23, 42, 0.16);
+}
+
+/* FORCE-UNIFY EXISTING CARDS */
+.modern-card,
+.feature-card,
+.coach-highlight-card,
+.card,
+.gc-twave-shell,
+.feature-stat-card,
+.feature-mini-stat {
+  border-radius: 28px !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.10) !important;
+}
+
+/* Hover consistency */
+.modern-card:hover,
+.feature-card:hover,
+.coach-highlight-card:hover,
+.card:hover,
+.gc-twave-shell:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 32px 90px rgba(15, 23, 42, 0.16) !important;
+}
+
+/* Padding harmony */
+.modern-card,
+.coach-highlight-card {
+  padding: 32px;
+}
+
+.feature-card {
+  padding: 0;
+}
+
+/* Remove aggressive Bootstrap card borders */
+.card {
+  background-clip: padding-box;
+}
+/* ================= BUTTON SYSTEM UNIFICATION ================= */
+
+/* PRIMARY BUTTON (MAIN ACTION) */
+.gc-btn-primary {
+  padding: 14px 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563EB, #06B6D4);
+  color: #F9FAFB;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gc-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 32px 80px rgba(37, 99, 235, 0.6);
+  color: #FFFFFF;
+}
+
+/* SECONDARY BUTTON (OUTLINE) */
+.gc-btn-outline {
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: rgba(255, 255, 255, 0.85);
+  color: #0F172A;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+}
+
+.gc-btn-outline:hover {
+  background: #F3F4F6;
+  border-color: rgba(37, 99, 235, 0.6);
+  color: #1D4ED8;
+  transform: translateY(-1px);
+}
+
+/* GHOST BUTTON (TEXT CTA) */
+.gc-btn-ghost {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: transparent;
+  color: #4B5563;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.gc-btn-ghost:hover {
+  color: #1D4ED8;
+}
+
+/* FORCE UNIFY BOOTSTRAP BUTTONS */
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB, #06B6D4) !important;
+  border-radius: 999px !important;
+  border: none !important;
+  box-shadow: 0 18px 48px rgba(37, 99, 235, 0.45) !important;
+}
+
+.btn-outline-dark {
+  border-radius: 999px !important;
+}
+
+.btn-dark {
+  border-radius: 999px !important;
+}
+/* ================= SECTION TRANSITIONS ================= */
+
+/* Soft curve divider */
+.gc-wave-divider {
+  position: relative;
+  overflow: hidden;
+}
+
+.gc-wave-divider::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: #F9FAFB;
+  clip-path: ellipse(65% 100% at 50% 100%);
+}
+
+/* Hero bottom fade */
+.hero-section-supermi {
+  position: relative;
+}
+
+.hero-section-supermi::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0) 0%,
+    #F9FAFB 100%
+  );
+  pointer-events: none;
+}
+
+/* Gentle section overlap */
+.gc-section-overlap {
+  margin-top: -80px;
+  padding-top: 160px;
+}
+
+@media (max-width: 768px) {
+  .gc-section-overlap {
+    margin-top: -48px;
+    padding-top: 120px;
+  }
+}
+/* ================= MICRO POLISH ================= */
+
+/* Global easing (feels premium) */
+* {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Slightly sharper text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings tighten */
+h1, h2, h3, h4 {
+  line-height: 1.15;
+}
+
+/* Paragraphs breathe */
+p {
+  line-height: 1.75;
+}
+
+/* Icons align better with text */
+i.bi {
+  vertical-align: -0.125em;
+}
+
+/* Card hover polish (less jumpy) */
+.gc-card:hover,
+.modern-card:hover,
+.coach-highlight-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Buttons feel softer on hover */
+.gc-btn-primary:hover,
+.gc-btn-outline:hover {
+  filter: brightness(1.02);
+}
+
+/* Reduce visual noise on badges */
+.badge {
+  letter-spacing: 0.04em;
+}
+
+/* Avatar hover micro interaction */
+.gc-twave-avatar-ring {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gc-twave-avatar-btn:hover .gc-twave-avatar-ring {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+}
+
+/* Navbar links feel intentional */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2563EB, #06B6D4);
+  transition: width 0.25s ease, left 0.25s ease;
+}
+
+.nav-link:hover::after {
+  width: 60%;
+  left: 20%;
 }
